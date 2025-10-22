@@ -1,75 +1,71 @@
--- Tipos / enums (opcional: enum nativo de Postgres)
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cut_type') THEN
-    CREATE TYPE cut_type AS ENUM ('C1','C2','C3A','C3B');
-  END IF;
-END$$;
+-- V1__init_es.sql
+-- Tablas para el modelo en español (coinciden con las entidades)
 
--- Tabla estudiantes
-CREATE TABLE students (
-  id              BIGSERIAL PRIMARY KEY,
-  email           TEXT NOT NULL UNIQUE,
-  name            TEXT,
-  auth_provider   TEXT NOT NULL,
-  auth_provider_id TEXT NOT NULL,
-  UNIQUE (auth_provider, auth_provider_id)
-);
-
--- Quizzes
-CREATE TABLE quizzes (
+-- Quices
+CREATE TABLE quices (
   id         BIGSERIAL PRIMARY KEY,
-  corte      cut_type NOT NULL,                 -- enum: C1,C2,C3A,C3B
+  corte      VARCHAR(255) NOT NULL CHECK (corte IN ('C1','C2','C3A','C3B')),
   titulo     TEXT NOT NULL,
-  es_activo  BOOLEAN NOT NULL DEFAULT TRUE
+  es_activo  BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en  TIMESTAMP NULL
 );
 
 -- Plantillas de preguntas
 CREATE TABLE question_templates (
   id               BIGSERIAL PRIMARY KEY,
-  quiz_id          BIGINT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
-  stem_md          TEXT NOT NULL,               -- enunciado con placeholders
+  quiz_id          BIGINT NOT NULL REFERENCES quices(id) ON DELETE CASCADE,
+  stem_md          TEXT NOT NULL,
   explanation_md   TEXT,
-  family           TEXT NOT NULL,               -- multinomial, hipergeom, etc.
-  param_schema     JSONB NOT NULL,              -- rangos
-  option_schema    JSONB NOT NULL,              -- cómo construir A,B,C,D
-  correct_key      TEXT NOT NULL                -- "A".."D"
+  family           VARCHAR(255) NOT NULL,
+  param_schema     JSONB NOT NULL,
+  option_schema    JSONB NOT NULL,
+  correct_key      VARCHAR(255) NOT NULL,
+  version          INT NOT NULL DEFAULT 1,
+  difficulty       VARCHAR(255)
+);
+
+-- Tópicos de plantilla (opcional, como en tu entidad)
+CREATE TABLE question_template_topics (
+  template_id  BIGINT NOT NULL REFERENCES question_templates(id) ON DELETE CASCADE,
+  topic        VARCHAR(255) NOT NULL
 );
 
 -- Intentos
-CREATE TABLE quiz_attempts (
-  id          BIGSERIAL PRIMARY KEY,
-  quiz_id     BIGINT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
-  student_id  BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-  seed        BIGINT NOT NULL,
-  started_at  TIMESTAMP NOT NULL DEFAULT now(),
-  submitted_at TIMESTAMP,
-  score       NUMERIC(5,2) DEFAULT NULL,
-  status      TEXT NOT NULL DEFAULT 'IN_PROGRESS' CHECK (status IN ('IN_PROGRESS','SUBMITTED'))
+CREATE TABLE intento_quiz (
+  id             BIGSERIAL PRIMARY KEY,
+  quiz_id        BIGINT NOT NULL REFERENCES quices(id) ON DELETE CASCADE,
+  student_id     BIGINT NOT NULL,
+  seed           BIGINT NOT NULL,
+  generator_version VARCHAR(255) NOT NULL DEFAULT 'v1',
+  started_at     TIMESTAMP NOT NULL DEFAULT now(),
+  submitted_at   TIMESTAMP,
+  status         VARCHAR(255) NOT NULL CHECK (status IN ('EN_PROGRESO','PRESENTADO','CANCELADO')),
+  max_points     NUMERIC(38,2),
+  score_points   NUMERIC(38,2),
+  score          NUMERIC(38,2),
+  time_limit_sec INTEGER,
+  submitted_ip   VARCHAR(255),
+  user_agent     VARCHAR(255)
 );
 
--- Instancias de preguntas (materializadas)
-CREATE TABLE question_instances (
+CREATE INDEX ix_intentos_quiz ON intento_quiz(quiz_id);
+CREATE INDEX ix_intentos_estudiante ON intento_quiz(student_id);
+
+-- Instancias de preguntas
+CREATE TABLE instancias_pregunta (
   id               BIGSERIAL PRIMARY KEY,
-  attempt_id       BIGINT NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+  attempt_id       BIGINT NOT NULL REFERENCES intento_quiz(id) ON DELETE CASCADE,
   template_id      BIGINT NOT NULL REFERENCES question_templates(id),
-  stem_md          TEXT NOT NULL,           -- ya interpolado
+  stem_md          TEXT NOT NULL,
   params           JSONB NOT NULL,
-  options          JSONB NOT NULL,          -- {"A":"..","B":"..",...}
-  correct_key      TEXT NOT NULL
+  opciones         JSONB NOT NULL,
+  llave_correcta   VARCHAR(255) NOT NULL
 );
 
 -- Respuestas
-CREATE TABLE answers (
-  id                    BIGSERIAL PRIMARY KEY,
-  question_instance_id  BIGINT NOT NULL REFERENCES question_instances(id) ON DELETE CASCADE,
-  chosen_key            TEXT,
-  is_correct            BOOLEAN NOT NULL,
-  answered_at           TIMESTAMP DEFAULT now()
+CREATE TABLE respuestas (
+  id                     BIGSERIAL PRIMARY KEY,
+  instancia_pregunta_id  BIGINT NOT NULL REFERENCES instancias_pregunta(id) ON DELETE CASCADE,
+  chosen_key             VARCHAR(255) NOT NULL,
+  is_correct             BOOLEAN NOT NULL
 );
-
--- Índices útiles
-CREATE INDEX ix_qi_params_gin  ON question_instances USING GIN (params);
-CREATE INDEX ix_qi_opts_gin    ON question_instances USING GIN (options);
-CREATE INDEX ix_attempts_student ON quiz_attempts(student_id);
-CREATE INDEX ix_attempts_quiz    ON quiz_attempts(quiz_id);
