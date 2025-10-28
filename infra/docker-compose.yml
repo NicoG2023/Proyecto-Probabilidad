@@ -14,7 +14,7 @@ services:
       KC_HEALTH_ENABLED: "true"
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import
-      # - ../frontend/themes:/opt/keycloak/themes
+      - ../frontend/themes:/opt/keycloak/themes
     ports:
       - "8080:8080"
     healthcheck:

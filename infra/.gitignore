@@ -1,3 +1,4 @@
 keycloak-export/*
 keycloak/*
 .env
+export_realm_full.sh
