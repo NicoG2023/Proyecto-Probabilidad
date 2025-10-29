@@ -18,6 +18,20 @@ export type IntentoQuiz = {
   quiz?: { corte?: string };
 };
 
+/** === Tipos para ver intento (frontend) === */
+export type PreguntaDTO = {
+  instanciaId: number;
+  enunciado: string;                         // viene de stemMd
+  opciones: Record<string, string>;          // { "A": "Opción A", ... }
+};
+
+export type IntentoVistaDTO = {
+  intentoId: number;
+  quizId: number;
+  estado: string;                            // p.ej. IN_PROGRESS
+  preguntas: PreguntaDTO[];
+};
+
 export type EstadisticasYo = {
   intentos: number;
   promedio: number;
@@ -29,10 +43,18 @@ export const EstudianteAPI = {
     const res = await http.post<IntentoCreadoDTO>(`/quices/${encodeURIComponent(corte)}/intentos`);
     return res.data;
   },
+
+  /** Lee el intento + preguntas (sin respuestas correctas) */
+  verIntento: async (intentoId: number) => {
+    const res = await http.get<IntentoVistaDTO>(`/intentos/${intentoId}`);
+    return res.data;
+  },
+
   estadisticas: async () => {
     const res = await http.get<EstadisticasYo>(`/yo/estadisticas`);
     return res.data;
   },
+
   ultimosIntentos: async (pagina = 0, tamano = 10) => {
     const res = await http.get<IntentoQuiz[]>(`/yo/intentos`, {
       params: { pagina, tamano },
