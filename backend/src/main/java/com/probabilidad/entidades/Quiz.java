@@ -19,7 +19,7 @@ public class Quiz extends PanacheEntityBase {
     @Column(name = "corte", nullable = false)
     public TipoCorte corte;
 
-    @Column(name = "titulo", nullable = false)
+    @Column(name = "titulo", nullable = false, columnDefinition = "TEXT")
     public String titulo;
 
     @Column(name = "es_activo", nullable = false)

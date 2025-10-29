@@ -15,19 +15,18 @@ export default function AppLayout() {
     [authenticated, hasRealmRole]
   );
 
-  // BONUS: si inicia sesión y es admin, llévalo a /admin
-  // (respetando navegación previa con state.from)
+  // Si inicia sesión y es admin, redirigir a /admin (si no viene de allí)
   useEffect(() => {
     if (!authenticated || !isAdmin) return;
     const noRedirect = ['/admin', '/users-management'];
-    if(!noRedirect.includes(location.pathname)){
+    if (!noRedirect.includes(location.pathname)) {
       const from = (location.state as any)?.from?.pathname;
-      if (!from) navigate('/admin', {replace: true});
+      if (!from) navigate('/admin', { replace: true });
     }
   }, [authenticated, isAdmin, location.pathname, location.state, navigate]);
 
   return (
-    <div className="min-h-screen bg-[#1E1E1E] text-white">
+    <div className="min-h-screen bg-gray-950 text-gray-100">
       {/* Navbar visible siempre (autenticado o no) */}
       <NavBar />
 

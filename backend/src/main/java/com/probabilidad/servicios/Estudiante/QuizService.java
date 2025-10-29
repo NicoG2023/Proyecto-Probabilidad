@@ -36,9 +36,9 @@ public class QuizService {
 
     /** Elige el quiz según el corte solicitado. Si corte==C3A/C3B respeta eso; si ya trataste "C3" en el recurso, llama a elegirC3Aleatorio(). */
     public Quiz elegirQuizActivoPorCorte(TipoCorte corteSolicitado, boolean usarAleatorioEnC3) {
-        if (usarAleatorioEnC3 && (corteSolicitado == null)) {
+        if (usarAleatorioEnC3) {            // el cliente pidió "C3"
             return elegirC3Aleatorio();
         }
-        return obtenerActivoPorCorte(corteSolicitado);
+        return obtenerActivoPorCorte(corteSolicitado); // C1, C2, C3A o C3B
     }
 }

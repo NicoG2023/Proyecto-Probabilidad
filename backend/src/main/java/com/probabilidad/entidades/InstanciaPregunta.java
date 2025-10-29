@@ -16,7 +16,7 @@ public class InstanciaPregunta extends PanacheEntityBase {
     public Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "attempt_id") // FK a intento
+    @JoinColumn(name = "intento_id") // FK a intento
     public IntentoQuiz intento;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -1,3 +1,4 @@
+// src/main/java/com/probabilidad/api/estudiante/IntentosResource.java
 package com.probabilidad.api.estudiante;
 
 import com.probabilidad.entidades.InstanciaPregunta;
@@ -8,12 +9,14 @@ import com.probabilidad.entidades.dominio.TipoCorte;
 import com.probabilidad.servicios.Estudiante.*;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import io.quarkus.logging.Log;
 
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,17 +33,22 @@ public class IntentosResource {
     @POST
     @Path("/quices/{corte}/intentos")
     @RolesAllowed("estudiante")
+    @Transactional
     public IntentoCreadoDTO crearIntento(@PathParam("corte") String corte) {
+        Log.info("sisirvohijuePUTA");
+        Log.infof("Intento de crear intento para corte", corte);
         Long alumnoId = auth.getAlumnoIdDesdeToken();
 
         Quiz quizElegido;
         String corteUpper = corte.toUpperCase();
         if ("C3".equals(corteUpper)) {
             quizElegido = quizService.elegirC3Aleatorio();
+            Log.infof("quizElegido=%s", quizElegido == null ? "null" : quizElegido.id);
             if (quizElegido == null) throw new NotFoundException("No hay quices activos para C3");
         } else {
             TipoCorte tipo = TipoCorte.valueOf(corteUpper);
             quizElegido = quizService.obtenerActivoPorCorte(tipo);
+            Log.infof("quizElegido=%s", quizElegido == null ? "null" : quizElegido.id);
             if (quizElegido == null) throw new NotFoundException("No hay quiz activo para el corte " + tipo);
         }
 
@@ -58,7 +66,7 @@ public class IntentosResource {
         IntentoQuiz intento = intentoService.obtenerIntentoPropio(intentoId, alumnoId);
 
         List<InstanciaPregunta> instancias =
-        InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
+            InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
 
         List<PreguntaDTO> preguntas = instancias.stream()
                 .map(PreguntaDTO::desde)
@@ -72,6 +80,7 @@ public class IntentosResource {
     @POST
     @Path("/intentos/{id}/respuestas")
     @RolesAllowed("estudiante")
+    @Transactional
     public Response guardarRespuestas(
             @PathParam("id") Long intentoId,
             LoteRespuestasDTO body) {
@@ -91,6 +100,7 @@ public class IntentosResource {
     @POST
     @Path("/intentos/{id}/enviar")
     @RolesAllowed("estudiante")
+    @Transactional
     public ResultadoEnvioDTO enviarIntento(@PathParam("id") Long intentoId) {
         Long alumnoId = auth.getAlumnoIdDesdeToken();
         IntentoQuiz intento = intentoService.enviarIntento(intentoId, alumnoId);
@@ -111,7 +121,7 @@ public class IntentosResource {
         IntentoQuiz intento = intentoService.obtenerIntentoPropio(intentoId, alumnoId);
 
         List<InstanciaPregunta> instancias =
-        InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
+            InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
 
         Map<Long, Respuesta> respuestas = Respuesta.<Respuesta>list(
                 "instanciaPregunta.intento.id = ?1", intento.id).stream()

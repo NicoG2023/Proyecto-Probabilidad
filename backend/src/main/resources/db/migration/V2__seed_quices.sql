@@ -33,23 +33,40 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P2: Combinatoria mixta (enunciado literal; aleatoriza, sin autocorrección por ahora)
+-- P2: Combinatoria por grupos (autocalificada con mcq_auto) — CON jóvenes
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
   (SELECT id FROM quices WHERE corte = 'C1' AND titulo = 'Primer Corte' LIMIT 1),
-  $$Al entrar en un ascensor exclusivo de una UCI en una clinica hay probabilidades de contagio de Covid-19, Omicron, y N1H1. Si entra un grupo de {mayores_tot} adultos Mayores, y {ninos_tot} Niños, la probabilidad de contagiarse {x_jov} Jóvenes, {x_may} Mayores, y uno de los Niños, es:$$,
-  $$Modelo no autocalificado en esta versión (combinatoria por grupos).$$,
+  $$En un ascensor exclusivo de una UCI ingresan {jovenes_tot} Jóvenes, {mayores_tot} Mayores y {ninos_tot} Niños.
+    La probabilidad de que se contagien exactamente {x_jov} Jóvenes, {x_may} Mayores y 1 Niño es:$$,
+  $$Modelo Bernoulli independiente por persona.
+    P = C(J, x_jov) p_J^{x_jov} (1-p_J)^{J-x_jov}
+        \cdot C(M, x_may) p_M^{x_may} (1-p_M)^{M-x_may}
+        \cdot C(N, 1) p_N (1-p_N)^{N-1}.$$,
   'combinatoria_mixta',
   '{
+    "jovenes_tot": { "values": [3,4,5] },
     "mayores_tot": { "values": [3,4,5] },
     "ninos_tot":   { "values": [1,2,3] },
+
     "x_jov":       { "min": 1, "max": 3 },
-    "x_may":       { "min": 1, "max": 4 },
-    "uno_dummy":   { "values": [1] }
+    "x_may":       { "min": 1, "max": 3 },
+
+    "p_jov":       { "values": [0.15, 0.20, 0.25] },
+    "p_may":       { "values": [0.20, 0.25, 0.30] },
+    "p_nino":      { "values": [0.10, 0.15, 0.20] }
   }'::jsonb,
-  '{}'::jsonb,
+  '{
+  "mode": "mcq_auto",
+  "num_options": 5,
+  "format": "number",
+  "decimals": 6,
+  "spread": 0.15,
+  "correct_expr": " nCr(jovenes_tot, x_jov) * pow(p_jov, x_jov) * pow(1-p_jov, jovenes_tot - x_jov) * nCr(mayores_tot, x_may) * pow(p_may, x_may) * pow(1-p_may, mayores_tot - x_may) * nCr(ninos_tot, 1) * p_nino * pow(1-p_nino, ninos_tot - 1) "
+}'::jsonb,
   'A', 1;
+
 
 -- P3: Serie 3 de 4 (prob B campeón) – aleatoriza pA
 INSERT INTO question_templates

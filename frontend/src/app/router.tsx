@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import AppLayout from './AppLayout';
-import EstudiantePage from '../pages/Estudiante/EstudiantePage';
+import EstudianteDashboard from '../pages/Estudiante/EstudianteDashboard';
 import AdminPage from '../pages/Admin/AdminPage';
 import NotFound from '../pages/NotFound';
 import RequireAuth from '../auth/guards/RequireAuth';
@@ -12,7 +12,7 @@ const router = createBrowserRouter([
     element: <AppLayout />,
     errorElement: <NotFound />,
     children: [
-      { index: true, element: <EstudiantePage /> },
+      { index: true, element: <EstudianteDashboard /> },
       {
         path: 'admin',
         element: (

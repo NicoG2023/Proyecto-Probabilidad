@@ -1,8 +1,16 @@
 /* Tailwind v4 */
 @import "tailwindcss";
 
-/* Globales */
+/* Alto completo para layout */
 html, body, #root { height: 100%; }
 
-/* Fondo oscuro + texto blanco */
-body { @apply bg-[#1E1E1E] text-white; }
+/* Opción A (recomendada): usa @layer base con utilidades válidas */
+@layer base {
+  body {
+    /* Evita @apply con valores arbitrarios; usa una escala estándar */
+    @apply bg-neutral-900 text-white;
+  }
+}
+
+/* Si quieres exactamente #1E1E1E, ponlo como CSS plano (no @apply): */
+/* body { background-color:#1E1E1E; color:#fff; } */

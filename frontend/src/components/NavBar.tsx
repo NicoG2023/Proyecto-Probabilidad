@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStrict } from '../auth/AuthContext';
 
-export default function NavBar({ title = 'Cinema Management' }: { title?: string }) {
+export default function NavBar({ title = 'Probabilidad' }: { title?: string }) {
   const { username, authenticated, login, logout, hasRealmRole } = useAuthStrict();
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,14 +42,14 @@ export default function NavBar({ title = 'Cinema Management' }: { title?: string
   }, [open]);
 
   return (
-    <header className="w-full bg-[#1E1E1E]">
+    <header className="w-full bg-blue-900/20">
       <div className="mx-auto max-w-7xl px-6 pt-6">
-        {/* Barra roja completa */}
+        {/* Barra principal */}
         <nav
           aria-label="Top Navigation"
-          className="flex items-center justify-between rounded-2xl bg-[#D90429] px-5 py-3"
+          className="flex items-center justify-between rounded-2xl bg-blue-700 px-5 py-3 ring-1 ring-white/10"
         >
-          {/* Título blanco sobre la barra roja */}
+          {/* Título (blanco) */}
           <Link to="/" className="text-xl font-bold tracking-wide text-white">
             {title}
           </Link>
@@ -59,7 +59,7 @@ export default function NavBar({ title = 'Cinema Management' }: { title?: string
             {!authenticated ? (
               <button
                 onClick={login}
-                className="rounded-xl bg-[#FFDA63] px-4 py-2 text-sm font-semibold text-[#333333] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#FFDA63]/60"
+                className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-blue-900 hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-white/60"
               >
                 Login
               </button>
@@ -71,11 +71,11 @@ export default function NavBar({ title = 'Cinema Management' }: { title?: string
                   aria-haspopup="menu"
                   aria-expanded={open}
                   onClick={() => setOpen(v => !v)}
-                  className="flex items-center gap-3 rounded-full bg-[#333333] pl-2 pr-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                  className="flex items-center gap-3 rounded-full bg-white/10 pl-2 pr-3 py-1 text-white backdrop-blur focus:outline-none focus:ring-2 focus:ring-white/40"
                 >
                   <span
                     aria-hidden
-                    className="grid h-8 w-8 place-items-center rounded-full bg-[#FFDA63] text-[#333333] text-sm font-bold"
+                    className="grid h-8 w-8 place-items-center rounded-full bg-amber-400 text-blue-900 text-sm font-bold"
                   >
                     {initial}
                   </span>
@@ -99,14 +99,24 @@ export default function NavBar({ title = 'Cinema Management' }: { title?: string
                     ref={menuRef}
                     role="menu"
                     aria-label="User menu"
-                    className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-[#333333] bg-[#1E1E1E] shadow-lg"
+                    className="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-xl border border-blue-800/40 bg-white text-blue-900 shadow-lg"
                   >
+                    {/* ejemplo: link admin visible solo si es admin */}
+                    {isAdmin && (
+                      <button
+                        role="menuitem"
+                        onClick={() => navigate('/admin')}
+                        className="block w-full px-4 py-3 text-left text-sm hover:bg-blue-50 focus:outline-none"
+                      >
+                        Panel Admin
+                      </button>
+                    )}
                     <button
                       role="menuitem"
                       onClick={logout}
-                      className="block w-full px-4 py-3 text-left text-sm text-white hover:bg-[#333333] focus:outline-none"
+                      className="block w-full px-4 py-3 text-left text-sm hover:bg-blue-50 focus:outline-none"
                     >
-                      logout
+                      Logout
                     </button>
                   </div>
                 )}

@@ -1,7 +1,22 @@
 -- V1__init_es.sql
--- Tablas para el modelo en español (coinciden con las entidades)
+-- =========================================
+-- 1) Alumnos
+-- =========================================
+CREATE TABLE alumnos (
+  id            BIGSERIAL PRIMARY KEY,
+  keycloak_sub  VARCHAR(255) NOT NULL UNIQUE,
+  username      VARCHAR(255),
+  email         VARCHAR(255),
+  created_at    TIMESTAMP     NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMP     NOT NULL DEFAULT now()
+);
 
--- Quices
+CREATE INDEX ix_alumnos_username ON alumnos(username);
+CREATE INDEX ix_alumnos_email    ON alumnos(email);
+
+-- =========================================
+-- 2) Quices
+-- =========================================
 CREATE TABLE quices (
   id         BIGSERIAL PRIMARY KEY,
   corte      VARCHAR(255) NOT NULL CHECK (corte IN ('C1','C2','C3A','C3B')),
@@ -10,7 +25,9 @@ CREATE TABLE quices (
   creado_en  TIMESTAMP NULL
 );
 
--- Plantillas de preguntas
+-- =========================================
+-- 3) Plantillas de preguntas
+-- =========================================
 CREATE TABLE question_templates (
   id               BIGSERIAL PRIMARY KEY,
   quiz_id          BIGINT NOT NULL REFERENCES quices(id) ON DELETE CASCADE,
@@ -24,45 +41,51 @@ CREATE TABLE question_templates (
   difficulty       VARCHAR(255)
 );
 
--- Tópicos de plantilla (opcional, como en tu entidad)
 CREATE TABLE question_template_topics (
   template_id  BIGINT NOT NULL REFERENCES question_templates(id) ON DELETE CASCADE,
   topic        VARCHAR(255) NOT NULL
 );
 
--- Intentos
+-- =========================================
+-- 4) Intentos
+-- =========================================
 CREATE TABLE intento_quiz (
-  id             BIGSERIAL PRIMARY KEY,
-  quiz_id        BIGINT NOT NULL REFERENCES quices(id) ON DELETE CASCADE,
-  student_id     BIGINT NOT NULL,
-  seed           BIGINT NOT NULL,
+  id                BIGSERIAL PRIMARY KEY,
+  quiz_id           BIGINT NOT NULL REFERENCES quices(id) ON DELETE CASCADE,
+  student_id        BIGINT NOT NULL REFERENCES alumnos(id),  -- FK al alumno
+  seed              BIGINT NOT NULL,
   generator_version VARCHAR(255) NOT NULL DEFAULT 'v1',
-  started_at     TIMESTAMP NOT NULL DEFAULT now(),
-  submitted_at   TIMESTAMP,
-  status         VARCHAR(255) NOT NULL CHECK (status IN ('EN_PROGRESO','PRESENTADO','CANCELADO')),
-  max_points     NUMERIC(38,2),
-  score_points   NUMERIC(38,2),
-  score          NUMERIC(38,2),
-  time_limit_sec INTEGER,
-  submitted_ip   VARCHAR(255),
-  user_agent     VARCHAR(255)
+  started_at        TIMESTAMP NOT NULL DEFAULT now(),
+  submitted_at      TIMESTAMP,
+  status            VARCHAR(255) NOT NULL CHECK (status IN ('EN_PROGRESO','PRESENTADO','CANCELADO')),
+  max_points        NUMERIC(38,2),
+  score_points      NUMERIC(38,2),
+  score             NUMERIC(38,2),
+  time_limit_sec    INTEGER,
+  submitted_ip      VARCHAR(255),
+  user_agent        VARCHAR(255)
 );
 
-CREATE INDEX ix_intentos_quiz ON intento_quiz(quiz_id);
-CREATE INDEX ix_intentos_estudiante ON intento_quiz(student_id);
+CREATE INDEX ix_intentos_quiz        ON intento_quiz(quiz_id);
+CREATE INDEX ix_intentos_estudiante  ON intento_quiz(student_id);
 
--- Instancias de preguntas
+-- =========================================
+-- 5) Instancias de preguntas
+--    OJO: la columna correcta es intento_id (no attempt_id)
+-- =========================================
 CREATE TABLE instancias_pregunta (
-  id               BIGSERIAL PRIMARY KEY,
-  attempt_id       BIGINT NOT NULL REFERENCES intento_quiz(id) ON DELETE CASCADE,
-  template_id      BIGINT NOT NULL REFERENCES question_templates(id),
-  stem_md          TEXT NOT NULL,
-  params           JSONB NOT NULL,
-  opciones         JSONB NOT NULL,
-  llave_correcta   VARCHAR(255) NOT NULL
+  id             BIGSERIAL PRIMARY KEY,
+  intento_id     BIGINT NOT NULL REFERENCES intento_quiz(id) ON DELETE CASCADE,
+  template_id    BIGINT NOT NULL REFERENCES question_templates(id),
+  stem_md        TEXT NOT NULL,
+  params         JSONB NOT NULL,
+  opciones       JSONB NOT NULL,
+  llave_correcta VARCHAR(255) NOT NULL
 );
 
--- Respuestas
+-- =========================================
+-- 6) Respuestas
+-- =========================================
 CREATE TABLE respuestas (
   id                     BIGSERIAL PRIMARY KEY,
   instancia_pregunta_id  BIGINT NOT NULL REFERENCES instancias_pregunta(id) ON DELETE CASCADE,
