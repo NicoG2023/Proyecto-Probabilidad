@@ -38,6 +38,27 @@ export type EstadisticasYo = {
   promedioPorCorte: Record<string, number>;
 };
 
+export type ResultadoEnvioDTO = {
+  intentoId: number;
+  estado: string;           // 'PRESENTADO'
+  nota: number | null;      // 0–100 (o null)
+  totalPreguntas: number;
+  correctas: number;
+};
+
+export type LoteRespuestasDTO = {
+  respuestas: { instanciaId: number; opcionMarcada: string }[];
+};
+
+export type RetroalimentacionDTO = {
+  instanciaId: number;
+  enunciado: string;
+  opciones: Record<string, string>;
+  opcionMarcada: string | null;
+  esCorrecta: boolean;
+  opcionCorrecta: string;
+};
+
 export const EstudianteAPI = {
   crearIntento: async (corte: Corte) => {
     const res = await http.post<IntentoCreadoDTO>(`/quices/${encodeURIComponent(corte)}/intentos`);
@@ -59,6 +80,27 @@ export const EstudianteAPI = {
     const res = await http.get<IntentoQuiz[]>(`/yo/intentos`, {
       params: { pagina, tamano },
     });
+    return res.data;
+  },
+
+  guardarRespuestas: async (intentoId: number, seleccion: Record<number, string>) => {
+    const payload: LoteRespuestasDTO = {
+      respuestas: Object.entries(seleccion).map(([instanciaId, opcionMarcada]) => ({
+        instanciaId: Number(instanciaId),
+        opcionMarcada,
+      })),
+    };
+    await http.post(`/intentos/${intentoId}/respuestas`, payload);
+  },
+
+  /** Envía el intento para calificar y retorna el resumen (nota). */
+  enviarIntento: async (intentoId: number) => {
+    const res = await http.post<ResultadoEnvioDTO>(`/intentos/${intentoId}/enviar`);
+    return res.data;
+  },
+
+  retroalimentacion: async (intentoId: number) => {
+    const res = await http.get<RetroalimentacionDTO[]>(`/intentos/${intentoId}/retroalimentacion`);
     return res.data;
   },
 };
