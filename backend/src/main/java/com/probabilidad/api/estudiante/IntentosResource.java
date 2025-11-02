@@ -2,11 +2,16 @@
 package com.probabilidad.api.estudiante;
 
 import com.probabilidad.entidades.InstanciaPregunta;
+import com.probabilidad.entidades.InstanciaPregunta.TipoInstancia;
 import com.probabilidad.entidades.IntentoQuiz;
 import com.probabilidad.entidades.Quiz;
 import com.probabilidad.entidades.Respuesta;
 import com.probabilidad.entidades.dominio.TipoCorte;
-import com.probabilidad.servicios.Estudiante.*;
+import com.probabilidad.servicios.Estudiante.AuthAlumnoService;
+import com.probabilidad.servicios.Estudiante.IntentoService;
+import com.probabilidad.servicios.Estudiante.QuizService;
+import com.probabilidad.servicios.Estudiante.RespuestaService;
+
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -16,7 +21,6 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import io.quarkus.logging.Log;
 
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -35,20 +39,16 @@ public class IntentosResource {
     @RolesAllowed("estudiante")
     @Transactional
     public IntentoCreadoDTO crearIntento(@PathParam("corte") String corte) {
-        Log.info("sisirvohijuePUTA");
-        Log.infof("Intento de crear intento para corte", corte);
         Long alumnoId = auth.getAlumnoIdDesdeToken();
 
         Quiz quizElegido;
-        String corteUpper = corte.toUpperCase();
+        String corteUpper = corte.toUpperCase(Locale.ROOT);
         if ("C3".equals(corteUpper)) {
             quizElegido = quizService.elegirC3Aleatorio();
-            Log.infof("quizElegido=%s", quizElegido == null ? "null" : quizElegido.id);
             if (quizElegido == null) throw new NotFoundException("No hay quices activos para C3");
         } else {
             TipoCorte tipo = TipoCorte.valueOf(corteUpper);
             quizElegido = quizService.obtenerActivoPorCorte(tipo);
-            Log.infof("quizElegido=%s", quizElegido == null ? "null" : quizElegido.id);
             if (quizElegido == null) throw new NotFoundException("No hay quiz activo para el corte " + tipo);
         }
 
@@ -66,7 +66,7 @@ public class IntentosResource {
         IntentoQuiz intento = intentoService.obtenerIntentoPropio(intentoId, alumnoId);
 
         List<InstanciaPregunta> instancias =
-            InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
+                InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
 
         List<PreguntaDTO> preguntas = instancias.stream()
                 .map(PreguntaDTO::desde)
@@ -81,17 +81,23 @@ public class IntentosResource {
     @Path("/intentos/{id}/respuestas")
     @RolesAllowed("estudiante")
     @Transactional
-    public Response guardarRespuestas(
-            @PathParam("id") Long intentoId,
-            LoteRespuestasDTO body) {
-
+    public Response guardarRespuestas(@PathParam("id") Long intentoId, LoteRespuestasDTO body) {
         Long alumnoId = auth.getAlumnoIdDesdeToken();
         IntentoQuiz intento = intentoService.obtenerIntentoPropio(intentoId, alumnoId);
 
-        Map<Long, String> mapa = body.respuestas.stream()
-                .collect(Collectors.toMap(r -> r.instanciaId, r -> r.opcionMarcada));
+        // Mapear a la clase helper del servicio
+        List<RespuestaService.ItemLote> items = (body == null || body.respuestas == null)
+                ? List.of()
+                : body.respuestas.stream().map(x -> {
+                    RespuestaService.ItemLote y = new RespuestaService.ItemLote();
+                    y.instanciaId = x.instanciaId;
+                    y.opcionMarcada = x.opcionMarcada;
+                    y.valorNumero = x.valorNumero;
+                    y.valorTexto = x.valorTexto;
+                    return y;
+                }).toList();
 
-        respuestaService.guardarRespuestasEnLote(intento, mapa);
+        respuestaService.guardarRespuestasEnLote(intento, items);
         return Response.noContent().build();
     }
 
@@ -121,10 +127,10 @@ public class IntentosResource {
         IntentoQuiz intento = intentoService.obtenerIntentoPropio(intentoId, alumnoId);
 
         List<InstanciaPregunta> instancias =
-            InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
+                InstanciaPregunta.<InstanciaPregunta>find("intento.id = ?1", intento.id).list();
 
         Map<Long, Respuesta> respuestas = Respuesta.<Respuesta>list(
-                "instanciaPregunta.intento.id = ?1", intento.id).stream()
+                        "instanciaPregunta.intento.id = ?1", intento.id).stream()
                 .collect(Collectors.toMap(r -> r.instanciaPregunta.id, r -> r));
 
         return instancias.stream().map(ip -> {
@@ -133,7 +139,7 @@ public class IntentosResource {
         }).toList();
     }
 
-    // ============== DTOs (nombres en español) ==============
+    // ====================== DTOs ======================
 
     public static class IntentoCreadoDTO {
         public Long intentoId;
@@ -169,11 +175,14 @@ public class IntentosResource {
         public Long instanciaId;
         public String enunciado;
         public Map<String, String> opciones;
+        public String tipo; // "MCQ" | "OPEN_NUM" | "OPEN_TEXT"
+
         public static PreguntaDTO desde(InstanciaPregunta ip) {
             PreguntaDTO d = new PreguntaDTO();
             d.instanciaId = ip.id;
-            d.enunciado = ip.stemMd;
-            d.opciones = ip.opciones;
+            d.enunciado   = ip.stemMd;
+            d.opciones    = ip.opciones != null ? ip.opciones : Map.of();
+            d.tipo        = ip.tipo != null ? ip.tipo.name() : TipoInstancia.MCQ.name(); // fallback
             return d;
         }
     }
@@ -184,7 +193,9 @@ public class IntentosResource {
 
     public static class ItemRespuestaDTO {
         public Long instanciaId;
-        public String opcionMarcada;
+        public String opcionMarcada;             // MCQ
+        public java.math.BigDecimal valorNumero; // OPEN_NUM
+        public String valorTexto;                // OPEN_TEXT
     }
 
     public static class ResultadoEnvioDTO {
@@ -208,18 +219,123 @@ public class IntentosResource {
         public Long instanciaId;
         public String enunciado;
         public Map<String, String> opciones;
-        public String opcionMarcada;
+
+        // Tipo y resultado general
+        public String tipo;              // "MCQ" | "OPEN_NUM" | "OPEN_TEXT"
         public boolean esCorrecta;
-        public String opcionCorrecta;
+
+        // MCQ
+        public String opcionMarcada;     // "A", "B", ...
+        public String opcionCorrecta;    // "A" (null en abiertas)
+
+        // Abiertas
+        public String valorIngresado;    // OPEN_TEXT
+        public Double numeroIngresado;   // OPEN_NUM
+        public String valorEsperado;     // Mostrar al estudiante (numérico formateado o texto)
+
         public static RetroalimentacionDTO desde(InstanciaPregunta ip, Respuesta r) {
             RetroalimentacionDTO d = new RetroalimentacionDTO();
             d.instanciaId = ip.id;
-            d.enunciado = ip.stemMd;
-            d.opciones = ip.opciones;
-            d.opcionMarcada = r != null ? r.chosenKey : null;
-            d.esCorrecta = r != null && r.isCorrect;
-            d.opcionCorrecta = ip.llaveCorrecta;
+            d.enunciado   = ip.stemMd;
+            d.opciones    = ip.opciones != null ? ip.opciones : Map.of();
+            d.tipo        = ip.tipo != null ? ip.tipo.name() : TipoInstancia.MCQ.name();
+            d.esCorrecta  = (r != null && Boolean.TRUE.equals(r.isCorrect));
+
+            if (ip.tipo == null || ip.tipo == TipoInstancia.MCQ) {
+                d.opcionCorrecta  = ip.llaveCorrecta;
+                d.opcionMarcada   = (r != null ? r.chosenKey : null);
+                d.valorIngresado  = null;
+                d.numeroIngresado = null;
+                d.valorEsperado   = null; // MCQ no aplica
+                return d;
+            }
+
+            switch (ip.tipo) {
+                case OPEN_NUM -> {
+                    d.opcionCorrecta  = null;
+                    d.opcionMarcada   = null;
+                    d.numeroIngresado = (r != null && r.chosenNumber != null) ? r.chosenNumber.doubleValue() : null;
+                    d.valorIngresado  = null;
+                    d.valorEsperado   = formatearEsperadoNumero(ip.correctValue);
+                }
+                case OPEN_TEXT -> {
+                    d.opcionCorrecta  = null;
+                    d.opcionMarcada   = null;
+                    d.valorIngresado  = (r != null ? r.chosenValue : null);
+                    d.numeroIngresado = null;
+                    d.valorEsperado   = formatearEsperadoTexto(ip.correctValue);
+                }
+                default -> {
+                    d.opcionCorrecta  = ip.llaveCorrecta;
+                    d.opcionMarcada   = (r != null ? r.chosenKey : null);
+                    d.valorIngresado  = null;
+                    d.numeroIngresado = null;
+                    d.valorEsperado   = null;
+                }
+            }
             return d;
+        }
+
+        // ===== Helpers para formatear el esperado de abiertas =====
+
+        @SuppressWarnings("unchecked")
+        private static String formatearEsperadoNumero(Map<String,Object> cv) {
+            if (cv == null) return null;
+            Object type = cv.get("type");
+            if (!"number".equals(type)) return null;
+
+            double value = asDouble(cv.get("value"));
+            String fmt   = str(cv.get("format"), "number"); // number|integer|percent
+            int dec      = asInt(cv.get("decimals"), 4);
+
+            if ("integer".equalsIgnoreCase(fmt)) {
+                return String.valueOf(Math.round(value));
+            }
+            if ("percent".equalsIgnoreCase(fmt)) {
+                double pct = value * 100.0;
+                return new java.text.DecimalFormat(pattern(dec)).format(pct) + " %";
+            }
+            // number
+            return new java.text.DecimalFormat(pattern(dec)).format(value);
+        }
+
+        @SuppressWarnings("unchecked")
+        private static String formatearEsperadoTexto(Map<String,Object> cv) {
+            if (cv == null) return null;
+            Object type = cv.get("type");
+            if (!"text".equals(type)) return null;
+
+            // Si definiste "canonical" en correctValue, úsalo
+            Object canonical = cv.get("canonical");
+            if (canonical != null) return String.valueOf(canonical);
+
+            // Si no, une las alternativas aceptadas para mostrarlas
+            Object acc = cv.get("accept");
+            if (acc instanceof List<?> lst && !lst.isEmpty()) {
+                return lst.stream().filter(Objects::nonNull).map(String::valueOf)
+                        .collect(Collectors.joining(" / "));
+            }
+            return null;
+        }
+
+        private static String pattern(int decimals) {
+            StringBuilder sb = new StringBuilder("0");
+            if (decimals > 0) {
+                sb.append(".");
+                for (int i = 0; i < decimals; i++) sb.append("0");
+            }
+            return sb.toString();
+        }
+        private static double asDouble(Object o) {
+            if (o instanceof Number n) return n.doubleValue();
+            return Double.parseDouble(String.valueOf(o));
+        }
+        private static int asInt(Object o, int def) {
+            if (o instanceof Number n) return n.intValue();
+            try { return Integer.parseInt(String.valueOf(o)); } catch (Exception e) { return def; }
+        }
+        private static String str(Object o, String def) {
+            return o == null ? def : String.valueOf(o);
         }
     }
 }

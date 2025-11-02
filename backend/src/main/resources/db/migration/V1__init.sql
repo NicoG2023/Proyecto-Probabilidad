@@ -74,21 +74,34 @@ CREATE INDEX ix_intentos_estudiante  ON intento_quiz(student_id);
 --    OJO: la columna correcta es intento_id (no attempt_id)
 -- =========================================
 CREATE TABLE instancias_pregunta (
-  id             BIGSERIAL PRIMARY KEY,
-  intento_id     BIGINT NOT NULL REFERENCES intento_quiz(id) ON DELETE CASCADE,
-  template_id    BIGINT NOT NULL REFERENCES question_templates(id),
-  stem_md        TEXT NOT NULL,
-  params         JSONB NOT NULL,
-  opciones       JSONB NOT NULL,
-  llave_correcta VARCHAR(255) NOT NULL
+  id              BIGSERIAL PRIMARY KEY,
+  intento_id      BIGINT NOT NULL REFERENCES intento_quiz(id) ON DELETE CASCADE,
+  template_id     BIGINT NOT NULL REFERENCES question_templates(id),
+  stem_md         TEXT   NOT NULL,
+  params          JSONB  NOT NULL,
+  opciones        JSONB  NOT NULL,                          -- vacío {} para abiertas
+  llave_correcta  VARCHAR(255),                             -- NULL en abiertas
+  -- NUEVO: tipo de instancia y valor correcto serializado
+  tipo            VARCHAR(20) NOT NULL
+                   CHECK (tipo IN ('MCQ','OPEN_NUM','OPEN_TEXT')),
+  correct_value   JSONB                                     -- p.ej. {"type":"number","value":0.1234,...}
 );
 
 -- =========================================
 -- 6) Respuestas
 -- =========================================
 CREATE TABLE respuestas (
-  id                     BIGSERIAL PRIMARY KEY,
-  instancia_pregunta_id  BIGINT NOT NULL REFERENCES instancias_pregunta(id) ON DELETE CASCADE,
-  chosen_key             VARCHAR(255) NOT NULL,
-  is_correct             BOOLEAN NOT NULL
+  id                      BIGSERIAL PRIMARY KEY,
+  instancia_pregunta_id   BIGINT NOT NULL REFERENCES instancias_pregunta(id) ON DELETE CASCADE,
+
+  -- Para MCQ:
+  chosen_key              VARCHAR(255),                     -- ahora opcional (NULL si es abierta)
+
+  -- Para abiertas:
+  chosen_value            TEXT,                             -- texto libre (OPEN_TEXT)
+  chosen_number           NUMERIC(38,10),                   -- numérico (OPEN_NUM)
+
+  -- Evaluación:
+  is_correct              BOOLEAN NOT NULL DEFAULT FALSE,   -- bandera binaria
+  partial_points          NUMERIC(10,4) NOT NULL DEFAULT 0  -- para extensiones (0..1)
 );

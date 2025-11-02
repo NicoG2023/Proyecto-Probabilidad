@@ -2,11 +2,11 @@ package com.probabilidad.servicios.Estudiante;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.probabilidad.entidades.InstanciaPregunta;
+import com.probabilidad.entidades.InstanciaPregunta.TipoInstancia;
 import com.probabilidad.entidades.IntentoQuiz;
 import com.probabilidad.entidades.Respuesta;
 import com.probabilidad.entidades.dominio.EstadoIntento;
@@ -14,62 +14,202 @@ import com.probabilidad.entidades.dominio.EstadoIntento;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
-/**
- * Flujo de ESTUDIANTE: guardar respuestas mientras el intento está EN_PROGRESO.
- * Calificación (dummy MCQ): chosenKey == llave_correcta.
- */
 @ApplicationScoped
 public class RespuestaService {
 
+    // ========= MCQ =========
     @Transactional
     public Respuesta guardarRespuestaOpcion(IntentoQuiz intento, Long instanciaId, String chosenKey) {
+        validarEstadoYPropiedad(intento, instanciaId);
+
+        InstanciaPregunta ip = InstanciaPregunta.findById(instanciaId);
+        if (ip.tipo != TipoInstancia.MCQ) {
+            throw new IllegalArgumentException("La instancia no es de opción múltiple (tipo=" + ip.tipo + ")");
+        }
+
+        Respuesta r = Respuesta.find("instanciaPregunta.id = ?1", instanciaId).firstResult();
+        if (r == null) {
+            r = new Respuesta();
+            r.instanciaPregunta = ip;
+            r.partialPoints = BigDecimal.ZERO;
+        }
+
+        // Limpiar campos de abierta
+        r.chosenValue = null;
+        r.chosenNumber = null;
+
+        r.chosenKey = chosenKey;
+        r.isCorrect = (chosenKey != null && chosenKey.equalsIgnoreCase(ip.llaveCorrecta));
+        r.partialPoints = r.isCorrect ? BigDecimal.ONE : BigDecimal.ZERO;
+        r.persist();
+        return r;
+    }
+
+    // ========= ABIERTAS (numéricas / texto) =========
+    @Transactional
+    public Respuesta guardarRespuestaLibre(IntentoQuiz intento, Long instanciaId, String valorTexto, BigDecimal valorNumero) {
+        validarEstadoYPropiedad(intento, instanciaId);
+
+        InstanciaPregunta ip = InstanciaPregunta.findById(instanciaId);
+        if (ip.tipo == TipoInstancia.MCQ) {
+            throw new IllegalArgumentException("La instancia es MCQ; use guardarRespuestaOpcion");
+        }
+
+        Respuesta r = Respuesta.find("instanciaPregunta.id = ?1", instanciaId).firstResult();
+        if (r == null) {
+            r = new Respuesta();
+            r.instanciaPregunta = ip;
+            r.partialPoints = BigDecimal.ZERO;
+        }
+
+        // Limpiar MCQ
+        r.chosenKey = null;
+
+        // Asignar libres
+        r.chosenValue  = valorTexto;
+        r.chosenNumber = valorNumero;
+
+        // Validaciones rápidas por tipo
+        if (ip.tipo == TipoInstancia.OPEN_NUM) {
+            if (r.chosenNumber == null) {
+                throw new IllegalArgumentException("Se esperaba un número para esta pregunta.");
+            }
+        } else if (ip.tipo == TipoInstancia.OPEN_TEXT) {
+            if (r.chosenValue == null || r.chosenValue.isBlank()) {
+                throw new IllegalArgumentException("Se esperaba texto para esta pregunta.");
+            }
+        }
+
+        // Evaluación inmediata
+        boolean ok = evaluarLibre(ip, r);
+        r.isCorrect = ok;
+        r.partialPoints = ok ? BigDecimal.ONE : BigDecimal.ZERO;
+
+        r.persist();
+        return r;
+    }
+
+    private void validarEstadoYPropiedad(IntentoQuiz intento, Long instanciaId) {
         if (intento.status != EstadoIntento.EN_PROGRESO)
             throw new IllegalStateException("El intento ya no admite respuestas");
 
         InstanciaPregunta ip = InstanciaPregunta.findById(instanciaId);
         if (ip == null || !ip.intento.id.equals(intento.id))
             throw new IllegalArgumentException("Instancia inválida para este intento");
-
-        Respuesta r = Respuesta.find("instanciaPregunta.id = ?1", instanciaId).firstResult();
-        if (r == null) {
-            r = new Respuesta();
-            r.instanciaPregunta = ip;
-        }
-        r.chosenKey = chosenKey;
-        r.isCorrect = elegirCorrecta(ip, chosenKey);
-        r.persist();
-        return r;
     }
 
+    /**
+     * Guarda lote heterogéneo (MCQ + abiertas).
+     * items: cada entrada puede traer opcionMarcada, o valorNumero/valorTexto.
+     */
     @Transactional
-    public void guardarRespuestasEnLote(IntentoQuiz intento, Map<Long, String> respuestas) {
-        for (Map.Entry<Long, String> e : respuestas.entrySet()) {
-            guardarRespuestaOpcion(intento, e.getKey(), e.getValue());
+    public void guardarRespuestasEnLote(IntentoQuiz intento, List<ItemLote> items) {
+        for (ItemLote it : items) {
+            if (it.opcionMarcada != null) {
+                guardarRespuestaOpcion(intento, it.instanciaId, it.opcionMarcada);
+            } else if (it.valorNumero != null || (it.valorTexto != null && !it.valorTexto.isBlank())) {
+                guardarRespuestaLibre(intento, it.instanciaId, it.valorTexto, it.valorNumero);
+            } else {
+                // Si llega un item vacío, lo ignoramos (o podrías limpiar respuesta).
+            }
         }
     }
 
-    /** Califica el intento y actualiza score/scorePoints. */
+    // === Evaluador de abiertas ===
+    private boolean evaluarLibre(InstanciaPregunta ip, Respuesta r) {
+        if (ip.tipo == TipoInstancia.OPEN_NUM) {
+            Map<String,Object> cv = ip.correctValue;
+            if (cv == null || !"number".equals(cv.get("type"))) return false;
+
+            double expected = asDouble(cv.get("value"));
+            double tolAbs   = cv.get("toleranceAbs") instanceof Number n ? n.doubleValue() : 0.0;
+            double tolPct   = cv.get("tolerancePct") instanceof Number n2 ? n2.doubleValue() : 0.0;
+
+            if (r.chosenNumber == null) return false;
+            double ans  = r.chosenNumber.doubleValue();
+            double diff = Math.abs(ans - expected);
+
+            boolean okAbs = tolAbs > 0 && diff <= tolAbs;
+            boolean okPct = tolPct > 0 && diff <= Math.abs(expected) * (tolPct / 100.0);
+            return (tolAbs == 0 && tolPct == 0) ? (diff == 0.0) : (okAbs || okPct);
+        }
+
+        if (ip.tipo == TipoInstancia.OPEN_TEXT) {
+            Map<String,Object> cv = ip.correctValue;
+            if (r.chosenValue == null) return false;
+
+            // Si no hay especificación de correctValue, por defecto quedan para revisión manual
+            if (cv == null || !"text".equals(cv.get("type"))) return false;
+
+            String ans = r.chosenValue;
+            boolean caseSensitive = Boolean.TRUE.equals(cv.get("caseSensitive"));
+            boolean trim = (cv.get("trim") == null) || Boolean.TRUE.equals(cv.get("trim"));
+
+            if (trim) ans = ans.trim();
+            String normAns = caseSensitive ? ans : ans.toLowerCase();
+
+            Object acc = cv.get("accept");
+            if (acc instanceof List<?> lst) {
+                for (Object o : lst) {
+                    if (o == null) continue;
+                    String s = String.valueOf(o);
+                    if (trim) s = s.trim();
+                    String norm = caseSensitive ? s : s.toLowerCase();
+                    if (norm.equals(normAns)) return true;
+                }
+            }
+            Object regs = cv.get("regex");
+            if (regs instanceof List<?> lst2) {
+                for (Object o : lst2) {
+                    if (o == null) continue;
+                    String pat = String.valueOf(o);
+                    if (normAns.matches(pat)) return true;
+                }
+            }
+            return false;
+        }
+
+        // Por defecto, falso
+        return false;
+    }
+
+    private double asDouble(Object o) {
+        if (o instanceof Number n) return n.doubleValue();
+        return Double.parseDouble(String.valueOf(o));
+    }
+
+    /** Califica todo el intento y actualiza score/scorePoints. */
     @Transactional
     public void calificarIntento(IntentoQuiz intento) {
         List<InstanciaPregunta> instancias = InstanciaPregunta.list("intento.id = ?1", intento.id);
 
-        // Asegurar que existan objetos Respuesta (si alguna quedó sin enviar, cuenta como incorrecta)
         Map<Long, Respuesta> existentes = Respuesta.<Respuesta>list("instanciaPregunta.intento.id = ?1", intento.id)
                 .stream().collect(Collectors.toMap(r -> r.instanciaPregunta.id, r -> r));
 
         for (InstanciaPregunta ip : instancias) {
-            existentes.computeIfAbsent(ip.id, k -> {
-                Respuesta r = new Respuesta();
+            Respuesta r = existentes.get(ip.id);
+            if (r == null) {
+                r = new Respuesta();
                 r.instanciaPregunta = ip;
                 r.chosenKey = null;
+                r.chosenValue = null;
+                r.chosenNumber = null;
                 r.isCorrect = false;
+                r.partialPoints = BigDecimal.ZERO;
                 r.persist();
-                return r;
-            });
+            } else {
+                // Revalida abiertas por si acaso
+                if (ip.tipo != TipoInstancia.MCQ) {
+                    boolean ok = evaluarLibre(ip, r);
+                    r.isCorrect = ok;
+                    r.partialPoints = ok ? BigDecimal.ONE : BigDecimal.ZERO;
+                    r.persist();
+                }
+            }
         }
 
-        long correctas = existentes.values().stream().filter(r -> r.isCorrect).count();
         long total = instancias.size();
+        long correctas = Respuesta.stream("instanciaPregunta.intento.id = ?1 and isCorrect = true", intento.id).count();
 
         intento.maxPoints = BigDecimal.valueOf(total);
         intento.scorePoints = BigDecimal.valueOf(correctas);
@@ -78,8 +218,11 @@ public class RespuestaService {
         intento.persist();
     }
 
-    private boolean elegirCorrecta(InstanciaPregunta ip, String chosenKey) {
-        if (chosenKey == null) return false;
-        return chosenKey.equalsIgnoreCase(ip.llaveCorrecta);
+    // === helper DTO para lote (lo usa el Recurso) ===
+    public static class ItemLote {
+        public Long instanciaId;
+        public String opcionMarcada;    // MCQ
+        public BigDecimal valorNumero;  // OPEN_NUM
+        public String valorTexto;       // OPEN_TEXT
     }
 }

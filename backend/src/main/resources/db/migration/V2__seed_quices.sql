@@ -1,5 +1,5 @@
--- Sembrado de 4 quices con preguntas aleatorizadas y autocorrección.
--- mcq_auto_pair para preguntas de "dos resultados" (A..E).
+-- Sembrado de 4 quices con preguntas aleatorizadas, autocorrección MCQ
+-- y abiertas (numéricas autocalificables / textuales manuales).
 
 ----------------------------------------------------------------
 -- P R I M E R   C O R T E   (C1)
@@ -7,7 +7,7 @@
 INSERT INTO quices (corte, titulo, es_activo, creado_en)
 VALUES ('C1', 'Primer Corte', TRUE, now());
 
--- P1: Multinomial (aleatorio con % en enunciado)
+-- P1: Multinomial (aleatorio con % en enunciado) — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -33,7 +33,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P2: Combinatoria por grupos (autocalificada con mcq_auto) — CON jóvenes
+-- P2: Combinatoria por grupos — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -58,17 +58,16 @@ SELECT
     "p_nino":      { "values": [0.10, 0.15, 0.20] }
   }'::jsonb,
   '{
-  "mode": "mcq_auto",
-  "num_options": 5,
-  "format": "number",
-  "decimals": 6,
-  "spread": 0.15,
-  "correct_expr": " nCr(jovenes_tot, x_jov) * pow(p_jov, x_jov) * pow(1-p_jov, jovenes_tot - x_jov) * nCr(mayores_tot, x_may) * pow(p_may, x_may) * pow(1-p_may, mayores_tot - x_may) * nCr(ninos_tot, 1) * p_nino * pow(1-p_nino, ninos_tot - 1) "
-}'::jsonb,
+    "mode": "mcq_auto",
+    "num_options": 5,
+    "format": "number",
+    "decimals": 6,
+    "spread": 0.15,
+    "correct_expr": " nCr(jovenes_tot, x_jov) * pow(p_jov, x_jov) * pow(1-p_jov, jovenes_tot - x_jov) * nCr(mayores_tot, x_may) * pow(p_may, x_may) * pow(1-p_may, mayores_tot - x_may) * nCr(ninos_tot, 1) * p_nino * pow(1-p_nino, ninos_tot - 1) "
+  }'::jsonb,
   'A', 1;
 
-
--- P3: Serie 3 de 4 (prob B campeón) – aleatoriza pA
+-- P3: Serie 3 de 4 (prob B campeón) — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -91,7 +90,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P4: Poisson aprox (más de 1 en t min) – aleatoriza
+-- P4: Poisson aprox (más de 1 en t min) — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -120,7 +119,7 @@ SELECT
 INSERT INTO quices (corte, titulo, es_activo, creado_en)
 VALUES ('C2', 'Segundo Corte', TRUE, now());
 
--- P1: Binomial aprox (dos probabilidades) → mcq_auto_pair (ALEATORIZADO)
+-- P1: Binomial aprox (dos probabilidades) — MCQ AUTO PAIR
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -128,7 +127,7 @@ SELECT
   $$Un proceso produce {pdef|percent} de artículos defectuosos. Si se seleccionan al azar {n} artículos del proceso las probabilidades de que el número de defectuosos exceda los {e} artículos, y de que sea menor de {m} artículos, respectivamente son (aprox. más cercana):$$,
   $$Normal aprox. con corrección de continuidad: 
 P(X>e)\approx 1-\Phi\!\big(\frac{e+0.5-np}{\sqrt{np(1-p)}}\big),\;
-P(X<m)\approx \Phi\!\big(\frac{m-0.5-np}{\sqrt{np(1-p)}}\big).$$,
+P(X<m)\approx \Phi\!\big(\frac{m-0.5-np}{\sqrt{np(1-p))}}\big).$$,
   'binomial_normal_doble',
   '{
     "pdef": { "values": [0.08, 0.10, 0.12] },
@@ -154,7 +153,7 @@ P(X<m)\approx \Phi\!\big(\frac{m-0.5-np}{\sqrt{np(1-p)}}\big).$$,
   }'::jsonb,
   'A', 1;
 
--- P2: Exponencial CDF (aleatorio)
+-- P2: Exponencial CDF — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -176,7 +175,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P3: Weibull supervivencia (aleatorio)
+-- P3: Weibull supervivencia — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -199,7 +198,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P4: Densidad conjunta (texto; aleatoriza constante; sin autocorrección)
+-- P4: Densidad conjunta (texto) — ABIERTA TEXTUAL MANUAL
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -210,7 +209,21 @@ SELECT
   '{
     "c": { "values": [16, 24, 32] }
   }'::jsonb,
-  '{}'::jsonb,
+  '{
+    "mode": "open_text",
+    "expected_text": "h(z) = (c/12) z^3, 0<z<1",
+    "accept": [
+      "(c/12) z^3",
+      "c*z^3/12",
+      "c/12 * z^3"
+    ],
+    "regex": [
+      ".*(c\\s*[/]?\\s*12).*z\\s*\\^\\s*3.*"
+    ],
+    "caseSensitive": false,
+    "trim": true,
+    "latex": "h(z)=\\frac{c}{12} z^{3},\\quad 0<z<1"
+  }'::jsonb,
   'A', 1;
 
 ----------------------------------------------------------------
@@ -219,7 +232,7 @@ SELECT
 INSERT INTO quices (corte, titulo, es_activo, creado_en)
 VALUES ('C3A', 'Tercer Corte – Primer Modelo', TRUE, now());
 
--- P1: Normal – dentro de tolerancia (fijos del enunciado)
+-- P1: Normal – dentro de tolerancia — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -243,7 +256,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P2: Hipergeométrica – (media, varianza) → mcq_auto_pair (ALEATORIZADO en K)
+-- P2: Hipergeométrica – (media, varianza) — MCQ AUTO PAIR
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -275,7 +288,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P3: Valor esperado comisiones (fijos del enunciado)
+-- P3: Valor esperado comisiones — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -299,28 +312,52 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P4: Máximo utilidad (abierta) – sin autocorrección
+-- P4: Máximo utilidad — ABIERTA NUMÉRICA AUTO
+-- U(μ)=30μ-5μ^2 -> μ*=3 -> Umax = 45
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
   (SELECT id FROM quices WHERE corte = 'C3A' AND titulo = 'Tercer Corte – Primer Modelo' LIMIT 1),
   $$Sea μ el tiempo promedio en horas de servicio que presta un Dron antes de tener una falla, y $5μ^2 su costo total. El ingreso por T horas de servicio es $30T, entonces la Utilidad Esperada Máxima del Dron es $____ (Complete sobre el espacio)$$,
-  $$U(μ)=30μ-5μ^2 \Rightarrow μ^*=3,\; U_{max}=45.$$ ,
+  $$U(μ)=30μ-5μ^2 \\Rightarrow μ^*=3,\\; U_{max}=45.$$ ,
   'max_utilidad_cuad',
   '{}'::jsonb,
-  '{}'::jsonb,
+  '{
+    "mode": "open_numeric",
+    "expected_expr": "45",
+    "toleranceAbs": 0.001,
+    "tolerancePct": 0.0,
+    "format": "number",
+    "decimals": 2,
+    "latex": "U_{\\max}=45"
+  }'::jsonb,
   'A', 1;
 
--- P5: Transformación Y=2X^3 (abierta) – sin autocorrección
+-- P5: Transformación Y=2X^3 — ABIERTA TEXTUAL MANUAL
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
   (SELECT id FROM quices WHERE corte = 'C3A' AND titulo = 'Tercer Corte – Primer Modelo' LIMIT 1),
   $$Dada la variable aleatoria continua X con la función de distribución de probabilidad f(x) = 2x, cuando 0 < x < 1, y 0 en otro caso, entonces la distribución de probabilidad de Y = 2X^3 es ____ (complete sobre el espacio).$$,
-  $$Y=2X^3 \Rightarrow y\in(0,2),\; f_Y(y)=f_X(\sqrt[3]{y/2})\frac{1}{3( y/2 )^{2/3}}.$$,
+  $$Y=2X^3 \\Rightarrow y\\in(0,2),\\; f_Y(y)=f_X(\\sqrt[3]{y/2})\\frac{1}{3( y/2 )^{2/3}}.$$,
   'transformacion_y_2x3',
   '{}'::jsonb,
-  '{}'::jsonb,
+  '{
+    "mode": "open_text",
+    "expected_text": "f_Y(y) = 2^{1/3} / (3 y^{1/3}), 0<y<2",
+    "accept": [
+      "2^(1/3)/(3*y^(1/3))",
+      "(2**(1/3))/(3*y**(1/3))",
+      "(1/3)*(2/y)^(1/3)"
+    ],
+    "regex": [
+      ".*2\\s*\\^\\s*\\(?1\\/?3\\)?\\s*\\/?\\s*\\(?3\\s*\\*\\s*y\\s*\\^\\s*\\(?1\\/?3\\)?\\)?.*",
+      ".*\\(1\\s*\\/\\s*3\\)\\s*\\*\\s*\\(?2\\s*\\/\\s*y\\)?\\s*\\^\\s*\\(?1\\/?3\\)?.*"
+    ],
+    "caseSensitive": false,
+    "trim": true,
+    "latex": "f_Y(y)=\\frac{2^{1/3}}{3\\,y^{1/3}},\\quad 0<y<2"
+  }'::jsonb,
   'A', 1;
 
 ----------------------------------------------------------------
@@ -329,7 +366,7 @@ SELECT
 INSERT INTO quices (corte, titulo, es_activo, creado_en)
 VALUES ('C3B', 'Tercer Corte – Segundo Modelo', TRUE, now());
 
--- P1: Normal intervalo (fijos del enunciado)
+-- P1: Normal intervalo — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -353,7 +390,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P2: Discreta {0,1,2} – (media, varianza) → mcq_auto_pair (fijo por enunciado)
+-- P2: Discreta {0,1,2} – (media, varianza) — MCQ AUTO PAIR
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -380,7 +417,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P3: Valor esperado comisiones (fijos del enunciado)
+-- P3: Valor esperado comisiones — MCQ AUTO
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -404,26 +441,48 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P4: Máximo utilidad (abierta) – sin autocorrección
+-- P4: Máximo utilidad — ABIERTA NUMÉRICA AUTO
+-- U(μ)=18μ-3μ^2 -> μ*=3 -> Umax = 27
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
   (SELECT id FROM quices WHERE corte = 'C3B' AND titulo = 'Tercer Corte – Segundo Modelo' LIMIT 1),
   $$Sea μ el tiempo promedio en horas de servicio que presta un Dron antes de tener una falla, y $3μ^2 su costo total. El ingreso por T horas de servicio es $18T, entonces la Utilidad Esperada Máxima del Dron es $____ (Complete sobre el espacio).$$,
-  $$U(μ)=18μ-3μ^2 \Rightarrow μ^*=3,\; U_{max}=27.$$,
+  $$U(μ)=18μ-3μ^2 \\Rightarrow μ^*=3,\\; U_{max}=27.$$,
   'max_utilidad_cuad',
   '{}'::jsonb,
-  '{}'::jsonb,
+  '{
+    "mode": "open_numeric",
+    "expected_expr": "27",
+    "toleranceAbs": 0.001,
+    "tolerancePct": 0.0,
+    "format": "number",
+    "decimals": 2,
+    "latex": "U_{\\max}=27"
+  }'::jsonb,
   'A', 1;
 
--- P5: Transformación Y=2X^2 (abierta) – sin autocorrección
+-- P5: Transformación Y=2X^2 — ABIERTA TEXTUAL MANUAL
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
   (SELECT id FROM quices WHERE corte = 'C3B' AND titulo = 'Tercer Corte – Segundo Modelo' LIMIT 1),
   $$Dada la variable aleatoria continua X con la función de distribución de probabilidad f(x) = 2(1-x), cuando 0 < x < 1, y 0 en otro caso, entonces la distribución de probabilidad de Y = 2X^2 es ____ (complete sobre el espacio).$$,
-  $$Y=2X^2,\; y\in(0,2).\; f_Y(y)=f_X(\sqrt{y/2})\frac{1}{4\sqrt{y/2}}.$$,
+  $$Y=2X^2,\\; y\\in(0,2).\\; f_Y(y)=f_X(\\sqrt{y/2})\\frac{1}{4\\sqrt{y/2}}.$$,
   'transformacion_y_2x2',
   '{}'::jsonb,
-  '{}'::jsonb,
+  '{
+    "mode": "open_text",
+    "expected_text": "f_Y(y) = 0.5*(sqrt(2/y) - 1), 0<y<2",
+    "accept": [
+      "0.5*(sqrt(2/y)-1)",
+      "1/2*(sqrt(2/y)-1)"
+    ],
+    "regex": [
+      ".*(1\\/?2|0\\.5)\\s*\\*\\s*\\(\\s*sqrt\\(\\s*2\\s*\\/\\s*y\\s*\\)\\s*-\\s*1\\s*\\).*"
+    ],
+    "caseSensitive": false,
+    "trim": true,
+    "latex": "f_Y(y)=\\tfrac{1}{2}\\big(\\sqrt{2/y}-1\\big),\\quad 0<y<2"
+  }'::jsonb,
   'A', 1;

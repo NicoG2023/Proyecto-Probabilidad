@@ -18,17 +18,17 @@ export type IntentoQuiz = {
   quiz?: { corte?: string };
 };
 
-/** === Tipos para ver intento (frontend) === */
 export type PreguntaDTO = {
   instanciaId: number;
-  enunciado: string;                         // viene de stemMd
-  opciones: Record<string, string>;          // { "A": "Opción A", ... }
+  enunciado: string;
+  opciones: Record<string, string>;
+  tipo?: 'MCQ' | 'OPEN_NUM' | 'OPEN_TEXT'; // <-- usa lo que manda el backend
 };
 
 export type IntentoVistaDTO = {
   intentoId: number;
   quizId: number;
-  estado: string;                            // p.ej. IN_PROGRESS
+  estado: string;
   preguntas: PreguntaDTO[];
 };
 
@@ -40,14 +40,19 @@ export type EstadisticasYo = {
 
 export type ResultadoEnvioDTO = {
   intentoId: number;
-  estado: string;           // 'PRESENTADO'
-  nota: number | null;      // 0–100 (o null)
+  estado: string;
+  nota: number | null;
   totalPreguntas: number;
   correctas: number;
 };
 
 export type LoteRespuestasDTO = {
-  respuestas: { instanciaId: number; opcionMarcada: string }[];
+  respuestas: Array<{
+    instanciaId: number;
+    opcionMarcada?: string;     // MCQ
+    valorNumero?: number;       // OPEN_NUM
+    valorTexto?: string;        // OPEN_TEXT
+  }>;
 };
 
 export type RetroalimentacionDTO = {
@@ -56,7 +61,13 @@ export type RetroalimentacionDTO = {
   opciones: Record<string, string>;
   opcionMarcada: string | null;
   esCorrecta: boolean;
-  opcionCorrecta: string;
+  opcionCorrecta: string | null;   // MCQ; null en abiertas
+
+  // Nuevos (si el backend los envía):
+  tipo?: 'MCQ' | 'OPEN_NUM' | 'OPEN_TEXT';
+  valorIngresado?: string | null;  // OPEN_TEXT
+  numeroIngresado?: number | null; // OPEN_NUM
+  valorEsperado?: string | null;   // texto formateado del esperado (OPEN_NUM/TEXT)
 };
 
 export const EstudianteAPI = {
@@ -65,7 +76,6 @@ export const EstudianteAPI = {
     return res.data;
   },
 
-  /** Lee el intento + preguntas (sin respuestas correctas) */
   verIntento: async (intentoId: number) => {
     const res = await http.get<IntentoVistaDTO>(`/intentos/${intentoId}`);
     return res.data;
@@ -77,23 +87,14 @@ export const EstudianteAPI = {
   },
 
   ultimosIntentos: async (pagina = 0, tamano = 10) => {
-    const res = await http.get<IntentoQuiz[]>(`/yo/intentos`, {
-      params: { pagina, tamano },
-    });
+    const res = await http.get<IntentoQuiz[]>(`/yo/intentos`, { params: { pagina, tamano } });
     return res.data;
   },
 
-  guardarRespuestas: async (intentoId: number, seleccion: Record<number, string>) => {
-    const payload: LoteRespuestasDTO = {
-      respuestas: Object.entries(seleccion).map(([instanciaId, opcionMarcada]) => ({
-        instanciaId: Number(instanciaId),
-        opcionMarcada,
-      })),
-    };
-    await http.post(`/intentos/${intentoId}/respuestas`, payload);
+  guardarRespuestas: async (intentoId: number, lote: LoteRespuestasDTO) => {
+    await http.post(`/intentos/${intentoId}/respuestas`, lote);
   },
 
-  /** Envía el intento para calificar y retorna el resumen (nota). */
   enviarIntento: async (intentoId: number) => {
     const res = await http.post<ResultadoEnvioDTO>(`/intentos/${intentoId}/enviar`);
     return res.data;
