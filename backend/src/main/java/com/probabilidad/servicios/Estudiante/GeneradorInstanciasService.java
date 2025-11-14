@@ -392,6 +392,9 @@ public class GeneradorInstanciasService {
             if ("open_text".equalsIgnoreCase(mode)) {
                 String expectedText   = optString(t.optionSchema, "expected_text", null);
                 String expectedTpl    = optString(t.optionSchema, "expected_template", null);
+                String canonicalTpl = optString(t.optionSchema, "canonical", null);
+                String canonical = canonicalTpl != null ? interpolar(canonicalTpl, params) : expectedText;
+                String format = optString(t.optionSchema, "format", "plain");
                 if (expectedText == null && expectedTpl != null) {
                     expectedText = interpolar(expectedTpl, params);
                 }
@@ -433,10 +436,12 @@ public class GeneradorInstanciasService {
                 Map<String,Object> cv = new LinkedHashMap<>();
                 cv.put("type", "text");
                 if (expectedText != null) cv.put("value", expectedText);
+                if (canonical != null)    cv.put("canonical", canonical);
                 if (!accept.isEmpty())   cv.put("accept", accept);
                 if (!regex.isEmpty())    cv.put("regex", regex);
                 cv.put("caseSensitive", caseSensitive);
                 cv.put("trim", trim);
+                cv.put("format", format);
                 if (latex != null)       cv.put("latex", latex);
 
                 ip.correctValue = cv;

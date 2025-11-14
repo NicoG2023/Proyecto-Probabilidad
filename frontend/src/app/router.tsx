@@ -1,22 +1,30 @@
-// src/router/index.tsx (o donde definas el router)
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import AppLayout from './AppLayout';
-import EstudianteDashboard from '../pages/Estudiante/EstudianteDashboard';
-import EstudianteQuizPage from '../pages/Estudiante/EstudianteQuizPage';
-import AdminPage from '../pages/Admin/AdminPage';
-import NotFound from '../pages/NotFound';
-import RequireAuth from '../auth/guards/RequireAuth';
-import RequireRole from '../auth/guards/RequireRole';
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import AppLayout from "./AppLayout";
+import EstudianteQuizPage from "../pages/Estudiante/EstudianteQuizPage";
+import AdminPage from "../pages/Admin/AdminPage";
+import ProfesorDashboard from "../pages/Profesor/ProfesorDashboard";
+import QuizPreviewPage from "../pages/QuizPreviewPage";
+import NotFound from "../pages/NotFound";
+import RequireAuth from "../auth/guards/RequireAuth";
+import RequireRole from "../auth/guards/RequireRole";
+import HomeLanding from "./router/HomeLanding";
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <AppLayout />,
     errorElement: <NotFound />,
     children: [
-      { index: true, element: <EstudianteDashboard /> },
       {
-        path: 'estudiante/quices/:intentoId',
+        index: true,
+        element: (
+          <RequireAuth>
+            <HomeLanding />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "estudiante/quices/:intentoId",
         element: (
           <RequireAuth>
             <RequireRole role="estudiante">
@@ -26,7 +34,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: 'admin',
+        path: "admin",
         element: (
           <RequireAuth>
             <RequireRole role="admin">
@@ -35,7 +43,27 @@ const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
-      { path: '404', element: <NotFound /> },
+      {
+        path: "profesor",
+        element: (
+          <RequireAuth>
+            <RequireRole role="profesor">
+              <ProfesorDashboard />
+            </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "preview/intentos/:intentoId",
+        element: (
+          <RequireAuth>
+            <RequireRole role="profesor">
+              <QuizPreviewPage />
+            </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      { path: "404", element: <NotFound /> },
     ],
   },
 ]);

@@ -141,31 +141,54 @@ public class RespuestaService {
             // Si no hay especificación de correctValue, por defecto quedan para revisión manual
             if (cv == null || !"text".equals(cv.get("type"))) return false;
 
-            String ans = r.chosenValue;
+            // Configuración
             boolean caseSensitive = Boolean.TRUE.equals(cv.get("caseSensitive"));
             boolean trim = (cv.get("trim") == null) || Boolean.TRUE.equals(cv.get("trim"));
 
-            if (trim) ans = ans.trim();
-            String normAns = caseSensitive ? ans : ans.toLowerCase();
+            Object fmtObj = cv.get("format");
+            String format = (fmtObj instanceof String s) ? s : "plain";
 
+            String normAns = normalizeText(r.chosenValue, format, caseSensitive, trim);
+
+            // 1) canonical (forma modelo)
+            Object canonObj = cv.get("canonical");
+            String canonical = null;
+            if (canonObj instanceof String cs) {
+                canonical = cs;
+            } else if (cv.get("value") instanceof String vs) {
+                // compat: si no hay canonical pero sí value, úsalo como modelo
+                canonical = vs;
+            }
+            if (canonical != null) {
+                String normCanonical = normalizeText(canonical, format, caseSensitive, trim);
+                if (normAns.equals(normCanonical)) return true;
+            }
+
+            // 2) accept[]
             Object acc = cv.get("accept");
             if (acc instanceof List<?> lst) {
                 for (Object o : lst) {
                     if (o == null) continue;
                     String s = String.valueOf(o);
-                    if (trim) s = s.trim();
-                    String norm = caseSensitive ? s : s.toLowerCase();
+                    String norm = normalizeText(s, format, caseSensitive, trim);
                     if (norm.equals(normAns)) return true;
                 }
             }
+
+            // 3) regex[]
             Object regs = cv.get("regex");
             if (regs instanceof List<?> lst2) {
                 for (Object o : lst2) {
                     if (o == null) continue;
                     String pat = String.valueOf(o);
-                    if (normAns.matches(pat)) return true;
+
+                    int flags = caseSensitive ? 0 : java.util.regex.Pattern.CASE_INSENSITIVE;
+                    java.util.regex.Pattern p = java.util.regex.Pattern.compile(pat, flags);
+
+                    if (p.matcher(normAns).matches()) return true;
                 }
             }
+
             return false;
         }
 
@@ -177,6 +200,41 @@ public class RespuestaService {
         if (o instanceof Number n) return n.doubleValue();
         return Double.parseDouble(String.valueOf(o));
     }
+
+    private String normalizeText(String s, String format, boolean caseSensitive, boolean trim) {
+        if (s == null) return null;
+        String out = s;
+
+        if (trim) {
+            out = out.trim();
+        }
+
+        if (!caseSensitive) {
+            // OJO: en LaTeX casi todo es case-sensitive, pero para tus expresiones esto está bien
+            out = out.toLowerCase(Locale.ROOT);
+        }
+
+        if ("latex".equalsIgnoreCase(format)) {
+            // Quitar espacios y comandos de espaciado típicos
+            out = out.replaceAll("\\s+", "");
+            out = out
+                    .replace("\\,", "")
+                    .replace("\\;", "")
+                    .replace("\\!", "")
+                    .replace("\\ ", "")
+                    .replace("~", "");
+
+            // Quitar \left y \right para no penalizar esas variaciones
+            out = out.replace("\\left", "")
+                    .replace("\\right", "");
+        } else {
+            // Formato "plain": colapsar espacios internos a uno solo
+            out = out.replaceAll("\\s+", " ");
+        }
+
+        return out;
+    }
+
 
     /** Califica todo el intento y actualiza score/scorePoints. */
     @Transactional

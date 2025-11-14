@@ -203,26 +203,34 @@ INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
   (SELECT id FROM quices WHERE corte = 'C2' AND titulo = 'Segundo Corte' LIMIT 1),
-  $$Una máquina empaca cajas de un kilogramo de chocolates combinando los tipos Crema, Chicloso y Envinado. Las variables aleatorias X e Y representan los pesos de los tipos Crema y Chicloso, respectivamente, con función de densidad conjunta f(x,y) = {c}xy, si 0 ≤ x ≤ y, 0 ≤ y ≤ 1, x+y ≤ 1, e igual a 0 en otro caso. Si Z = X + Y es la variable aleatoria de la cantidad de pesos de los tipos Crema y Chiclosos, entonces, la función de densidad de probabilidad h(z) para 0 < z < 1 es igual a$$,
+  $$Una máquina empaca cajas de un kilogramo de chocolates combinando los tipos Crema, Chicloso y Envinado. 
+Las variables aleatorias X e Y representan los pesos de los tipos Crema y Chicloso, respectivamente, 
+con función de densidad conjunta 
+\[
+f(x,y) = {c}\,x y,\quad 0 \le x \le y,\; 0 \le y \le 1,\; x + y \le 1,
+\]
+e igual a 0 en otro caso. 
+
+Si Z = X + Y es la variable aleatoria de la cantidad de pesos de los tipos Crema y Chiclosos, 
+se puede demostrar que su función de densidad de probabilidad para 0 < z < 1 es de la forma
+\[
+h(z) = k z^{3},\quad 0 < z < 1.
+\]
+
+¿Cuál es el valor numérico de k?$$,
   $$Derivación por integración en 0≤x≤y, x+y≤1 (resultado simbólico).$$,
   'densidad_conjunta_choc',
   '{
     "c": { "values": [16, 24, 32] }
   }'::jsonb,
   '{
-    "mode": "open_text",
-    "expected_text": "h(z) = (c/12) z^3, 0<z<1",
-    "accept": [
-      "(c/12) z^3",
-      "c*z^3/12",
-      "c/12 * z^3"
-    ],
-    "regex": [
-      ".*(c\\s*[/]?\\s*12).*z\\s*\\^\\s*3.*"
-    ],
-    "caseSensitive": false,
-    "trim": true,
-    "latex": "h(z)=\\frac{c}{12} z^{3},\\quad 0<z<1"
+    "mode": "open_numeric",
+    "expected_expr": " c / 12 ",
+    "format": "number",
+    "decimals": 4,
+    "toleranceAbs": 0.0001,
+    "tolerancePct": 0.0,
+    "latex": "h(z)=k z^{3},\\quad 0<z<1"
   }'::jsonb,
   'A', 1;
 
@@ -333,7 +341,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P5: Transformación Y=2X^3 — ABIERTA TEXTUAL MANUAL
+-- P5: Transformación Y=2X^3 — ABIERTA TEXTUAL (LaTeX)
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -344,21 +352,23 @@ SELECT
   '{}'::jsonb,
   '{
     "mode": "open_text",
-    "expected_text": "f_Y(y) = 2^{1/3} / (3 y^{1/3}), 0<y<2",
+    "format": "latex",
+
+    "canonical": "f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},0<y<2",
+    "expected_text": "f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},\\quad 0<y<2",
+
     "accept": [
-      "2^(1/3)/(3*y^(1/3))",
-      "(2**(1/3))/(3*y**(1/3))",
-      "(1/3)*(2/y)^(1/3)"
+      "f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},0<y<2",
+      "f_Y(y)=\\frac{2^{1/3}}{3\\,y^{1/3}},\\quad 0<y<2",
+      "\\frac{2^{1/3}}{3y^{1/3}},0<y<2"
     ],
-    "regex": [
-      ".*2\\s*\\^\\s*\\(?1\\/?3\\)?\\s*\\/?\\s*\\(?3\\s*\\*\\s*y\\s*\\^\\s*\\(?1\\/?3\\)?\\)?.*",
-      ".*\\(1\\s*\\/\\s*3\\)\\s*\\*\\s*\\(?2\\s*\\/\\s*y\\)?\\s*\\^\\s*\\(?1\\/?3\\)?.*"
-    ],
+
     "caseSensitive": false,
     "trim": true,
     "latex": "f_Y(y)=\\frac{2^{1/3}}{3\\,y^{1/3}},\\quad 0<y<2"
   }'::jsonb,
   'A', 1;
+
 
 ----------------------------------------------------------------
 -- T E R C E R   C O R T E — S E G U N D O   M O D E L O  (C3B)
@@ -462,7 +472,7 @@ SELECT
   }'::jsonb,
   'A', 1;
 
--- P5: Transformación Y=2X^2 — ABIERTA TEXTUAL MANUAL
+-- P5: Transformación Y=2X^2 — ABIERTA TEXTUAL (LaTeX)
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
 SELECT
@@ -473,16 +483,20 @@ SELECT
   '{}'::jsonb,
   '{
     "mode": "open_text",
-    "expected_text": "f_Y(y) = 0.5*(sqrt(2/y) - 1), 0<y<2",
+    "format": "latex",
+
+    "canonical": "f_Y(y)=\\frac{1}{2}(\\sqrt{2/y}-1),0<y<2",
+    "expected_text": "f_Y(y)=\\frac{1}{2}(\\sqrt{2/y}-1),\\quad 0<y<2",
+
     "accept": [
-      "0.5*(sqrt(2/y)-1)",
-      "1/2*(sqrt(2/y)-1)"
+      "f_Y(y)=\\frac{1}{2}(\\sqrt{2/y}-1),0<y<2",
+      "f_Y(y)=\\tfrac{1}{2}(\\sqrt{2/y}-1),\\quad 0<y<2",
+      "\\frac{1}{2}(\\sqrt{2/y}-1),0<y<2"
     ],
-    "regex": [
-      ".*(1\\/?2|0\\.5)\\s*\\*\\s*\\(\\s*sqrt\\(\\s*2\\s*\\/\\s*y\\s*\\)\\s*-\\s*1\\s*\\).*"
-    ],
+
     "caseSensitive": false,
     "trim": true,
     "latex": "f_Y(y)=\\tfrac{1}{2}\\big(\\sqrt{2/y}-1\\big),\\quad 0<y<2"
   }'::jsonb,
   'A', 1;
+

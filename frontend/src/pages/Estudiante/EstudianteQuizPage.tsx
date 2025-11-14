@@ -467,14 +467,28 @@ function QuestionCard(props: {
         </div>
       ) : (
         <div className="space-y-2">
-          <input
-            type="text"
-            className="w-full rounded-lg border border-gray-800 bg-gray-900/50 px-3 py-2 text-sm text-gray-100 outline-none focus:ring-1 focus:ring-blue-600"
+          <label className="block text-xs text-gray-400">
+            Puedes escribir tu respuesta en LaTeX, por ejemplo:{" "}
+            <code className="font-mono text-[11px] text-gray-300">
+              {"f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},\\ 0<y<2"}
+            </code>
+          </label>
+
+          <textarea
+            className="w-full min-h-[80px] rounded-lg border border-gray-800 bg-gray-900/50 px-3 py-2 text-sm text-gray-100 outline-none focus:ring-1 focus:ring-blue-600"
             value={props.openValueText ?? ""}
             onChange={(e) => props.onChangeOpenText(e.target.value)}
             disabled={props.disabled}
-            placeholder="Escribe tu respuesta..."
+            placeholder="Escribe aquí tu expresión (se acepta LaTeX)..."
           />
+
+          {/* Preview en tiempo real (usa KaTeX si parece matemática) */}
+          {props.openValueText && (
+            <div className="mt-1 text-xs text-gray-400">
+              Vista previa:
+              <MathBlock text={props.openValueText} />
+            </div>
+          )}
         </div>
       )}
 
