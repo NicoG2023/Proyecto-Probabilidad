@@ -207,35 +207,85 @@ public class GeneradorInstanciasService {
                 int decimals = optInt(t.optionSchema, "decimals", 4);
                 double spread = optDouble(t.optionSchema, "spread", 0.15);
 
+                // prefijo y sufijo opcionales (para $, %, etc.)
+                String prefix = optString(t.optionSchema, "prefix", "");
+                String suffix = optString(t.optionSchema, "suffix", "");
+
+                // NUEVO: denominador máximo para formato "fraction"
+                int maxDen = optInt(t.optionSchema, "max_denominator", 1000);
+
                 String correctExpr = String.valueOf(t.optionSchema.get("correct_expr"));
                 double correctValue = ExprEval.eval(correctExpr, params);
 
-                List<Double> valores = new ArrayList<>();
-                List<String> textos = new ArrayList<>();
-                valores.add(correctValue);
-                textos.add(formatValue(correctValue, fmt, decimals));
+                // plantillas de display explícitas (se mantienen)
+                String correctDisplayTpl = optString(t.optionSchema, "correct_display", null);
 
-                Object dRaw = t.optionSchema.get("distractor_exprs");
-                if (dRaw instanceof List<?> exprList) {
-                    for (Object de : exprList) {
-                        if (de != null) {
-                            double v = ExprEval.eval(String.valueOf(de), params);
-                            valores.add(v);
-                            textos.add(formatValue(v, fmt, decimals));
-                        }
+                List<String> distractDisplayTpls = new ArrayList<>();
+                Object rawDistrDisp = t.optionSchema.get("distractor_display");
+                if (rawDistrDisp instanceof List<?> lst) {
+                    for (Object o : lst) {
+                        distractDisplayTpls.add(o == null ? null : String.valueOf(o));
                     }
                 }
 
+                List<Double> valores = new ArrayList<>();
+                List<String> textos  = new ArrayList<>();
+
+                // 0) opción correcta
+                valores.add(correctValue);
+                {
+                    String baseText;
+                    if (correctDisplayTpl != null) {
+                        baseText = interpolar(correctDisplayTpl, params);
+                    } else {
+                        baseText = "fraction".equalsIgnoreCase(fmt)
+                                ? toLatexFraction(correctValue, maxDen)
+                                : formatValue(correctValue, fmt, decimals);
+                    }
+                    textos.add(prefix + baseText + suffix);
+                }
+
+                // 1) distractores explícitos
+                Object dRaw = t.optionSchema.get("distractor_exprs");
+                int dispIdx = 0;
+                if (dRaw instanceof List<?> exprList) {
+                    for (Object de : exprList) {
+                        if (de == null) continue;
+                        double v = ExprEval.eval(String.valueOf(de), params);
+                        valores.add(v);
+
+                        String dispTpl = (dispIdx < distractDisplayTpls.size())
+                                ? distractDisplayTpls.get(dispIdx)
+                                : null;
+                        dispIdx++;
+
+                        String baseText;
+                        if (dispTpl != null) {
+                            baseText = interpolar(dispTpl, params);
+                        } else {
+                            baseText = "fraction".equalsIgnoreCase(fmt)
+                                    ? toLatexFraction(v, maxDen)
+                                    : formatValue(v, fmt, decimals);
+                        }
+                        textos.add(prefix + baseText + suffix);
+                    }
+                }
+
+                // 2) distractores auto-generados
                 int faltan = Math.max(0, numOptions - valores.size());
                 if (faltan > 0) {
                     Random rndDistr = new Random(intento.seed.intValue() + 37L * (i + 1));
                     List<Double> extra = generarDistractores(correctValue, faltan, spread, "around", rndDistr);
                     for (double v : extra) {
                         valores.add(v);
-                        textos.add(formatValue(v, fmt, decimals));
+                        String baseText = "fraction".equalsIgnoreCase(fmt)
+                                ? toLatexFraction(v, maxDen)
+                                : formatValue(v, fmt, decimals);
+                        textos.add(prefix + baseText + suffix);
                     }
                 }
 
+                // 3) barajar y construir mapa A,B,C,...
                 List<Integer> idx = new ArrayList<>();
                 int limite = Math.min(numOptions, textos.size());
                 for (int j = 0; j < limite; j++) idx.add(j);
@@ -265,6 +315,9 @@ public class GeneradorInstanciasService {
                 continue;
             }
 
+
+
+
             // ===== (2.b) mcq_auto_pair =====
             if ("mcq_auto_pair".equalsIgnoreCase(mode) && t.optionSchema != null
                     && t.optionSchema.containsKey("left_expr") && t.optionSchema.containsKey("right_expr")) {
@@ -283,9 +336,15 @@ public class GeneradorInstanciasService {
                 double spreadL = optDouble(t.optionSchema, "spread_left",  0.15);
                 double spreadR = optDouble(t.optionSchema, "spread_right", 0.15);
 
+                // ← NUEVO: leemos la unidad una sola vez
+                String unit = optString(t.optionSchema, "unit", null);
+
                 double L = ExprEval.eval(leftExpr, params);
                 double R = ExprEval.eval(rightExpr, params);
                 String correctText = formatValue(L, lf, ld) + sep + formatValue(R, rf, rd);
+                if (unit != null) {
+                    correctText = correctText + " " + unit;   // ← APLICAR UNIDAD
+                }
 
                 List<String> textos = new ArrayList<>();
                 List<Boolean> correctoFlag = new ArrayList<>();
@@ -303,6 +362,9 @@ public class GeneradorInstanciasService {
                                 double lVal = ExprEval.eval(String.valueOf(le), params);
                                 double rVal = ExprEval.eval(String.valueOf(re), params);
                                 String txt = formatValue(lVal, lf, ld) + sep + formatValue(rVal, rf, rd);
+                                if (unit != null) {
+                                    txt = txt + " " + unit;   // ← APLICAR UNIDAD
+                                }
                                 textos.add(txt);
                                 correctoFlag.add(Boolean.FALSE);
                             }
@@ -316,6 +378,9 @@ public class GeneradorInstanciasService {
                     double lCand = L * (1.0 + (rndPair.nextBoolean() ? 1 : -1) * rndPair.nextDouble() * spreadL);
                     double rCand = R * (1.0 + (rndPair.nextBoolean() ? 1 : -1) * rndPair.nextDouble() * spreadR);
                     String txt = formatValue(lCand, lf, ld) + sep + formatValue(rCand, rf, rd);
+                    if (unit != null) {
+                        txt = txt + " " + unit;   // ← APLICAR UNIDAD
+                    }
                     if (!textos.contains(txt)) {
                         textos.add(txt);
                         correctoFlag.add(Boolean.FALSE);
@@ -351,6 +416,7 @@ public class GeneradorInstanciasService {
                 ip.persist();
                 continue;
             }
+
 
             // ===== (3) ABIERTA NUMÉRICA =====
             if ("open_numeric".equalsIgnoreCase(mode) && t.optionSchema != null && t.optionSchema.containsKey("expected_expr")) {
@@ -492,4 +558,59 @@ public class GeneradorInstanciasService {
         if (v instanceof String s) return Boolean.parseBoolean(s);
         return def;
     }
+
+    // Convierte un double a fracción tipo \dfrac{num}{den}
+    // usando una búsqueda simple hasta maxDenominator
+    private static String toLatexFraction(double value, int maxDenominator) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return String.valueOf(value);
+        }
+
+        int sign = value < 0 ? -1 : 1;
+        double x = Math.abs(value);
+
+        int bestNum = 0;
+        int bestDen = 1;
+        double bestErr = Double.MAX_VALUE;
+
+        for (int den = 1; den <= maxDenominator; den++) {
+            int num = (int) Math.round(x * den);
+            double approx = (double) num / den;
+            double err = Math.abs(x - approx);
+            if (err < bestErr - 1e-12) {
+                bestErr = err;
+                bestNum = num;
+                bestDen = den;
+            }
+        }
+
+        if (sign < 0) bestNum = -bestNum;
+
+        if (bestDen == 1) {
+            // Es un entero
+            return String.valueOf(bestNum);
+        } else {
+            return "$\\dfrac{" + bestNum + "}{" + bestDen + "}$";
+        }
+    }
+
+    // Renderiza un valor numérico según fmt/decimals/prefix/suffix
+    // y soporta format = "fraction"
+    private String renderOptionValue(
+            double value,
+            String fmt,
+            int decimals,
+            int maxDen,
+            String prefix,
+            String suffix
+    ) {
+        String baseText;
+        if ("fraction".equalsIgnoreCase(fmt)) {
+            baseText = toLatexFraction(value, maxDen);
+        } else {
+            baseText = formatValue(value, fmt, decimals);
+        }
+        return prefix + baseText + suffix;
+    }
+
 }

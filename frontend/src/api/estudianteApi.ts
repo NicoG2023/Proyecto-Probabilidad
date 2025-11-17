@@ -12,6 +12,7 @@ export type IntentoCreadoDTO = {
 
 export type IntentoQuiz = {
   id: number;
+  status?: 'EN_PROGRESO' | 'PRESENTADO' | 'CANCELADO' | string;
   score?: number | null;
   startedAt?: string | null;
   submittedAt?: string | null;
