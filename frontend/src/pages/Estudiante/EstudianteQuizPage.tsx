@@ -448,7 +448,7 @@ function QuestionCard(props: {
                   <span className="mr-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300">
                     {key}
                   </span>
-                  {label}
+                  <MathInline text={label} />
                 </span>
               </label>
             );

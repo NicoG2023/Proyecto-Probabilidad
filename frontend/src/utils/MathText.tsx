@@ -21,7 +21,7 @@ export function MathInline({ text }: { text: string }) {
   if (!text) return null;
 
   // 1) Caso mixto: texto + \[ ... \]
-  const displayRegex = /\\\[(.*?)\\\]/gs; // captura \[ ... \]
+  const displayRegex = /\\\[(.*?)\\\]/gs;
   let match: RegExpExecArray | null;
   let lastIndex = 0;
   const parts: React.ReactNode[] = [];
@@ -36,10 +36,8 @@ export function MathInline({ text }: { text: string }) {
       );
     }
 
-    const mathContent = match[1]; // interior de \[ ... \]
-    parts.push(
-      <InlineMath key={`m-${match.index}`} math={mathContent} />
-    );
+    const mathContent = match[1];
+    parts.push(<InlineMath key={`m-${match.index}`} math={mathContent} />);
 
     lastIndex = displayRegex.lastIndex;
   }
@@ -56,17 +54,24 @@ export function MathInline({ text }: { text: string }) {
     return <>{parts}</>;
   }
 
-  // 2) Si NO hay \[...\] pero todo parece fórmula, úsalo como inline math
+  // 2) Si viene envuelto en $...$ o $$...$$, asumir que es LaTeX
+  const dollarMatch = text.match(/^\s*\${1,2}([\s\S]*?)\${1,2}\s*$/);
+  if (dollarMatch) {
+    const math = dollarMatch[1];
+    return <InlineMath math={math} />;
+  }
+
+  // 3) Si NO hay \[...\] pero todo parece fórmula, úsalo como inline math
   if (isLikelyMath(text)) {
-    // Si viniera entre $...$, limpiamos (por compatibilidad)
-    const m = text.match(/^\$(.*)\$$/s);
+    const m = text.match(/^\$(.*)\$/s);
     const math = m ? m[1] : text.replace(/\$/g, "");
     return <InlineMath math={math} />;
   }
 
-  // 3) Texto normal
+  // 4) Texto normal
   return <>{text}</>;
 }
+
 
 /**
  * Bloque de matemáticas o texto monoespaciado.
@@ -75,8 +80,20 @@ export function MathInline({ text }: { text: string }) {
 export function MathBlock({ text }: { text: string }) {
   if (!text) return null;
 
+  // 1) Si viene envuelto en $...$ o $$...$$, renderizar como bloque
+  const dollarMatch = text.match(/^\s*\${1,2}([\s\S]*?)\${1,2}\s*$/);
+  if (dollarMatch) {
+    const math = dollarMatch[1];
+    return (
+      <div className="mt-1">
+        <BlockMath math={math} />
+      </div>
+    );
+  }
+
+  // 2) Heurística de math “pura”
   if (isLikelyMath(text)) {
-    const m = text.match(/^\$\$(.*)\$\$$/s);
+    const m = text.match(/^\$\$(.*)\$\$/s);
     const math = m ? m[1] : text.replace(/\$\$/g, "");
     return (
       <div className="mt-1">
@@ -85,6 +102,7 @@ export function MathBlock({ text }: { text: string }) {
     );
   }
 
-  // Si no es LaTeX, muéstralo como texto normal/monoespaciado
+  // 3) No es LaTeX → texto monoespaciado
   return <span className="font-mono">{text}</span>;
 }
+

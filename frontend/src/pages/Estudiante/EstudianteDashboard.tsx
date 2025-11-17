@@ -1,5 +1,5 @@
 // src/pages/EstudianteDashboard.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EstudianteAPI as API } from "../../api/estudianteApi";
 import type {
   Corte,
@@ -8,9 +8,11 @@ import type {
   EstadisticasYo,
 } from "../../api/estudianteApi";
 import { useAuthStrict } from "../../auth/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function EstudianteDashboard() {
   const { ready, authenticated } = useAuthStrict();
+  const navigate = useNavigate();
   const [loadingStats, setLoadingStats] = useState(true);
   const [stats, setStats] = useState<EstadisticasYo | null>(null);
   const [loadingHist, setLoadingHist] = useState(true);
@@ -74,7 +76,7 @@ export default function EstudianteDashboard() {
       setStarting(corte);
       setError(null);
       const dto: IntentoCreadoDTO = await API.crearIntento(corte);
-      window.location.href = `/estudiante/quices/${dto.intentoId}`;
+      navigate(`/estudiante/quices/${dto.intentoId}`);
     } catch (e: any) {
       console.error(e);
       setError(
@@ -188,7 +190,11 @@ export default function EstudianteDashboard() {
                     <th className="border-b border-gray-800 px-2 py-2">ID</th>
                     <th className="border-b border-gray-800 px-2 py-2">Corte</th>
                     <th className="border-b border-gray-800 px-2 py-2">Nota</th>
+                    <th className="border-b border-gray-800 px-2 py-2">Estado</th>
                     <th className="border-b border-gray-800 px-2 py-2">Fecha</th>
+                    <th className="border-b border-gray-800 px-2 py-2 text-right">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -203,12 +209,33 @@ export default function EstudianteDashboard() {
                       <td className="border-b border-gray-800 px-2 py-2">
                         {formatMaybeNumber(it?.score, 2, "%")}
                       </td>
+
+                      {/* ESTADO */}
+                      <td className="border-b border-gray-800 px-2 py-2">
+                        <StudentStatusPill status={it.status} />
+                      </td>
+
+                      {/* FECHA */}
                       <td className="border-b border-gray-800 px-2 py-2">
                         {it.submittedAt
                           ? new Date(it.submittedAt).toLocaleString()
                           : it.startedAt
                           ? new Date(it.startedAt).toLocaleString()
                           : "—"}
+                      </td>
+
+                      {/* ACCIONES */}
+                      <td className="border-b border-gray-800 px-2 py-2 text-right">
+                        {it.status && it.status !== "PRESENTADO" ? (
+                          <button
+                            onClick={() => navigate(`/estudiante/quices/${it.id}`)}
+                            className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-3 py-1.5 text-xs font-medium text-white hover:opacity-95"
+                          >
+                            {it.status === "EN_PROGRESO" ? "Continuar" : "Retomar"}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-gray-500">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -326,3 +353,29 @@ function formatMaybeNumber(
   const v = Number(x);
   return `${v.toFixed(decimals)}${suffix ?? ""}`;
 }
+
+function StudentStatusPill(props: { status?: string | null }) {
+  const status = props.status ?? "DESCONOCIDO";
+  let label = status;
+  let classes =
+    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium";
+
+  if (status === "PRESENTADO") {
+    label = "Presentado";
+    classes +=
+      " bg-emerald-500/15 text-emerald-300 border border-emerald-500/40";
+  } else if (status === "EN_PROGRESO") {
+    label = "En progreso";
+    classes +=
+      " bg-amber-500/15 text-amber-300 border border-amber-500/40";
+  } else if (status === "CANCELADO") {
+    label = "Cancelado";
+    classes += " bg-red-500/15 text-red-300 border border-red-500/40";
+  } else {
+    label = status;
+    classes += " bg-gray-700 text-gray-200";
+  }
+
+  return <span className={classes}>{label}</span>;
+}
+
