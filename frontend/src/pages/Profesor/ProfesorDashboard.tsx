@@ -476,6 +476,104 @@ export default function ProfesorDashboard() {
 
 /* ================== Modal ================== */
 
+// function AttemptsModal(props: {
+//   student: StudentSummaryDto;
+//   attempts: StudentQuizAttemptDto[];
+//   loading: boolean;
+//   error: string | null;
+//   onClose: () => void;
+//   onPreview: (attemptId: number) => void;
+// }) {
+//   const { student, attempts, loading, error, onClose, onPreview } = props;
+
+//   return (
+//     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
+//       <div className="relative w-full max-w-3xl rounded-2xl border border-gray-800 bg-gray-950/95 p-5 shadow-2xl">
+//         <div className="mb-4 flex items-center justify-between">
+//           <div>
+//             <h3 className="text-base font-semibold text-gray-100">
+//               Quices de {student.username ?? `ID ${student.id}`}
+//             </h3>
+//             {student.email && (
+//               <p className="text-xs text-gray-400">{student.email}</p>
+//             )}
+//           </div>
+//           <button
+//             onClick={onClose}
+//             className="inline-flex h-8 items-center justify-center rounded-full border border-gray-700 bg-gray-900 px-3 text-xs text-gray-300 hover:bg-gray-800"
+//           >
+//             Cerrar
+//           </button>
+//         </div>
+
+//         {error && (
+//           <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
+//             {error}
+//           </div>
+//         )}
+
+//         {loading ? (
+//           <SkeletonTable />
+//         ) : attempts.length === 0 ? (
+//           <EmptyState
+//             title="Este alumno aún no tiene quices."
+//             subtitle="Cuando el alumno presente quices, verás aquí su historial."
+//           />
+//         ) : (
+//           <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-800/80 bg-gray-950/40">
+//             <table className="w-full table-auto border-collapse text-sm">
+//               <thead>
+//                 <tr className="bg-gray-900/80 text-left text-xs uppercase tracking-wide text-gray-400">
+//                   <th className="border-b border-gray-800 px-3 py-2">Quiz</th>
+//                   <th className="border-b border-gray-800 px-3 py-2">Corte</th>
+//                   <th className="border-b border-gray-800 px-3 py-2">Nota</th>
+//                   <th className="border-b border-gray-800 px-3 py-2">Estado</th>
+//                   <th className="border-b border-gray-800 px-3 py-2 text-right">
+//                     Acciones
+//                   </th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {attempts.map((it) => (
+//                   <tr
+//                     key={it.attemptId}
+//                     className="border-b border-gray-900/60 text-xs last:border-b-0 hover:bg-gray-800/40"
+//                   >
+//                     <td className="px-3 py-2 align-middle">
+//                       <div className="flex flex-col">
+//                         <span className="text-gray-100">{it.quizTitle}</span>
+//                         <span className="text-[11px] text-gray-500">
+//                           ID {it.attemptId}
+//                         </span>
+//                       </div>
+//                     </td>
+//                     <td className="px-3 py-2 align-middle text-gray-200">
+//                       {it.corte}
+//                     </td>
+//                     <td className="px-3 py-2 align-middle text-gray-200">
+//                       {formatMaybeNumber(it.score, 1, "%")}
+//                     </td>
+//                     <td className="px-3 py-2 align-middle">
+//                       <StatusPill status={it.status} />
+//                     </td>
+//                     <td className="px-3 py-2 align-middle text-right">
+//                       <button
+//                         onClick={() => onPreview(it.attemptId)}
+//                         className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-3 py-1.5 text-[11px] font-medium text-gray-900 shadow-sm shadow-amber-500/40 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+//                       >
+//                         Consultar
+//                       </button>
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
 function AttemptsModal(props: {
   student: StudentSummaryDto;
   attempts: StudentQuizAttemptDto[];
@@ -488,7 +586,8 @@ function AttemptsModal(props: {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
-      <div className="relative w-full max-w-3xl rounded-2xl border border-gray-800 bg-gray-950/95 p-5 shadow-2xl">
+      <div className="relative w-full max-w-3xl rounded-xl border border-gray-700 bg-gray-900/95 p-5">
+        {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="text-base font-semibold text-gray-100">
@@ -500,18 +599,20 @@ function AttemptsModal(props: {
           </div>
           <button
             onClick={onClose}
-            className="inline-flex h-8 items-center justify-center rounded-full border border-gray-700 bg-gray-900 px-3 text-xs text-gray-300 hover:bg-gray-800"
+            className="inline-flex h-8 items-center justify-center rounded-full border border-gray-600 bg-gray-800 px-3 text-xs text-gray-300 hover:bg-gray-700"
           >
             Cerrar
           </button>
         </div>
 
+        {/* Error */}
         {error && (
-          <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
+          <div className="mb-3 rounded-lg border border-gray-600 bg-gray-800/30 p-2 text-xs text-gray-300">
             {error}
           </div>
         )}
 
+        {/* Loading / Empty / Table */}
         {loading ? (
           <SkeletonTable />
         ) : attempts.length === 0 ? (
@@ -520,15 +621,15 @@ function AttemptsModal(props: {
             subtitle="Cuando el alumno presente quices, verás aquí su historial."
           />
         ) : (
-          <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-800/80 bg-gray-950/40">
+          <div className="max-h-[420px] overflow-auto rounded-lg border border-gray-700 bg-gray-900/30">
             <table className="w-full table-auto border-collapse text-sm">
               <thead>
-                <tr className="bg-gray-900/80 text-left text-xs uppercase tracking-wide text-gray-400">
-                  <th className="border-b border-gray-800 px-3 py-2">Quiz</th>
-                  <th className="border-b border-gray-800 px-3 py-2">Corte</th>
-                  <th className="border-b border-gray-800 px-3 py-2">Nota</th>
-                  <th className="border-b border-gray-800 px-3 py-2">Estado</th>
-                  <th className="border-b border-gray-800 px-3 py-2 text-right">
+                <tr className="bg-gray-800 text-left text-xs uppercase tracking-wide text-gray-400">
+                  <th className="border-b border-gray-700 px-3 py-2">Quiz</th>
+                  <th className="border-b border-gray-700 px-3 py-2">Corte</th>
+                  <th className="border-b border-gray-700 px-3 py-2">Nota</th>
+                  <th className="border-b border-gray-700 px-3 py-2">Estado</th>
+                  <th className="border-b border-gray-700 px-3 py-2 text-right">
                     Acciones
                   </th>
                 </tr>
@@ -537,20 +638,20 @@ function AttemptsModal(props: {
                 {attempts.map((it) => (
                   <tr
                     key={it.attemptId}
-                    className="border-b border-gray-900/60 text-xs last:border-b-0 hover:bg-gray-800/40"
+                    className="border-b border-gray-800 text-xs last:border-b-0 hover:bg-gray-800/30"
                   >
                     <td className="px-3 py-2 align-middle">
                       <div className="flex flex-col">
                         <span className="text-gray-100">{it.quizTitle}</span>
-                        <span className="text-[11px] text-gray-500">
+                        <span className="text-[11px] text-gray-400">
                           ID {it.attemptId}
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 align-middle text-gray-200">
+                    <td className="px-3 py-2 align-middle text-gray-300">
                       {it.corte}
                     </td>
-                    <td className="px-3 py-2 align-middle text-gray-200">
+                    <td className="px-3 py-2 align-middle text-gray-300">
                       {formatMaybeNumber(it.score, 1, "%")}
                     </td>
                     <td className="px-3 py-2 align-middle">
@@ -559,7 +660,7 @@ function AttemptsModal(props: {
                     <td className="px-3 py-2 align-middle text-right">
                       <button
                         onClick={() => onPreview(it.attemptId)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-3 py-1.5 text-[11px] font-medium text-gray-900 shadow-sm shadow-amber-500/40 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+                        className="inline-flex items-center gap-1 rounded-lg bg-gray-800 px-3 py-1.5 text-[11px] font-medium text-gray-100 hover:bg-gray-700"
                       >
                         Consultar
                       </button>
@@ -577,24 +678,46 @@ function AttemptsModal(props: {
 
 /* ================== Componentes UI auxiliares ================== */
 
+// function ChartCard(props: {
+//   title: string;
+//   subtitle?: string;
+//   children: React.ReactNode;
+// }) {
+//   return (
+//     <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/80 p-4">
+//       <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-gradient-to-br from-blue-600 to-amber-500 opacity-20 blur-2xl" />
+//       <div className="mb-3">
+//         <h3 className="text-sm font-semibold text-gray-100">{props.title}</h3>
+//         {props.subtitle && (
+//           <p className="mt-1 text-xs text-gray-400">{props.subtitle}</p>
+//         )}
+//       </div>
+//       <div className="relative z-10">{props.children}</div>
+//     </div>
+//   );
+// }
 function ChartCard(props: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/80 p-4">
-      <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-gradient-to-br from-blue-600 to-amber-500 opacity-20 blur-2xl" />
+    <div className="relative overflow-hidden rounded-xl border border-gray-700 bg-gray-900/80 p-4">
+      {/* Fondo decorativo eliminado o reemplazado por gris neutro */}
+      <div className="absolute right-[-40px] top-[-40px] h-32 w-32 rounded-full bg-gray-800 opacity-20 blur-2xl" />
+
       <div className="mb-3">
         <h3 className="text-sm font-semibold text-gray-100">{props.title}</h3>
         {props.subtitle && (
           <p className="mt-1 text-xs text-gray-400">{props.subtitle}</p>
         )}
       </div>
+
       <div className="relative z-10">{props.children}</div>
     </div>
   );
 }
+
 
 function SimpleBarChart<T>(props: {
   data: T[];

@@ -573,129 +573,270 @@ function QuestionCard(props: {
     valorEsperado?: string | null;     // texto o LaTeX
   };
 }) {
+  // return (
+  //   <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+  //     <div className="mb-3 text-sm font-medium text-gray-300">
+  //       <span className="mr-2 rounded bg-gray-800 px-2 py-0.5 text-xs text-gray-300">
+  //         {props.index}
+  //       </span>
+  //       {/* Render enunciado: si trae LaTeX entre $...$ o $$...$$ se muestra como ecuación */}
+  //       <p className="inline">
+  //         <MathInline text={props.enunciado ?? ""} />
+  //       </p>
+  //     </div>
+
+  //     {/* Render según tipo */}
+  //     {props.tipo === "MCQ" ? (
+  //       <div className="space-y-2">
+  //         {props.opciones.map(([key, label]) => {
+  //           const id = `${props.name}_${key}`;
+
+  //           let optionClasses = "rounded-lg border border-gray-800 bg-gray-900/50";
+  //           if (props.feedback) {
+  //             const marcada = props.feedback.opcionMarcada;
+  //             const correcta = props.feedback.opcionCorrecta ?? undefined;
+
+  //             if (key === correcta) optionClasses = "rounded-lg border border-emerald-600 bg-emerald-700/20";
+  //             if (marcada && key === marcada && !props.feedback.esCorrecta)
+  //               optionClasses = "rounded-lg border border-rose-600 bg-rose-700/20";
+  //           }
+
+  //           return (
+  //             <label
+  //               key={key}
+  //               htmlFor={id}
+  //               className={`flex items-center gap-3 px-3 py-2 ${
+  //                 props.disabled ? "opacity-70 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/60"
+  //               } ${optionClasses}`}
+  //             >
+  //               <input
+  //                 id={id}
+  //                 type="radio"
+  //                 name={props.name}
+  //                 value={key}
+  //                 checked={props.value === key}
+  //                 onChange={() => !props.disabled && props.onChangeRadio(key)}
+  //                 className="h-4 w-4 accent-blue-500"
+  //                 disabled={props.disabled}
+  //               />
+  //               <span className="text-sm text-gray-100">
+  //                 <span className="mr-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300">
+  //                   {key}
+  //                 </span>
+  //                 <MathInline text={label} />
+  //               </span>
+  //             </label>
+  //           );
+  //         })}
+  //       </div>
+  //     ) : props.tipo === "OPEN_NUM" ? (
+  //       <div className="space-y-2">
+  //         <input
+  //           type="number"
+  //           className="w-full rounded-lg border border-gray-800 bg-gray-900/50 px-3 py-2 text-sm text-gray-100 outline-none focus:ring-1 focus:ring-blue-600"
+  //           value={props.openValueNumber ?? ""}
+  //           onChange={(e) => props.onChangeOpenNumber(e.target.value === "" ? undefined : Number(e.target.value))}
+  //           disabled={props.disabled}
+  //           placeholder="Escribe un número..."
+  //         />
+  //       </div>
+  //     ) : (
+  //       <div className="space-y-2">
+  //         <label className="block text-xs text-gray-400">
+  //           Puedes escribir tu respuesta en LaTeX, por ejemplo:{" "}
+  //           <code className="font-mono text-[11px] text-gray-300">
+  //             {"f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},\\ 0<y<2"}
+  //           </code>
+  //         </label>
+
+  //         <textarea
+  //           className="w-full min-h-[80px] rounded-lg border border-gray-800 bg-gray-900/50 px-3 py-2 text-sm text-gray-100 outline-none focus:ring-1 focus:ring-blue-600"
+  //           value={props.openValueText ?? ""}
+  //           onChange={(e) => props.onChangeOpenText(e.target.value)}
+  //           disabled={props.disabled}
+  //           placeholder="Escribe aquí tu expresión (se acepta LaTeX)..."
+  //         />
+
+  //         {/* Preview en tiempo real (usa KaTeX si parece matemática) */}
+  //         {props.openValueText && (
+  //           <div className="mt-1 text-xs text-gray-400">
+  //             Vista previa:
+  //             <MathBlock text={props.openValueText} />
+  //           </div>
+  //         )}
+  //       </div>
+  //     )}
+
+  //     {/* Feedback */}
+  //     {props.feedback && (
+  //       <div className="mt-3 text-xs">
+  //         {props.feedback.tipo === "MCQ" ? (
+  //           props.feedback.esCorrecta ? (
+  //             <span className="rounded bg-emerald-700/20 px-2 py-0.5 text-emerald-300">¡Correcto!</span>
+  //           ) : (
+  //             <span className="rounded bg-rose-700/20 px-2 py-0.5 text-rose-300">
+  //               Incorrecto · Correcta: <b>{props.feedback.opcionCorrecta ?? "—"}</b>
+  //             </span>
+  //           )
+  //         ) : props.feedback.esCorrecta ? (
+  //           <span className="rounded bg-emerald-700/20 px-2 py-0.5 text-emerald-300">¡Respuesta correcta!</span>
+  //         ) : (
+  //           <div className="rounded bg-rose-700/20 px-2 py-1 text-rose-200">
+  //             <div>Incorrecta</div>
+  //             {props.feedback.valorEsperado && (
+  //               <div className="mt-1">
+  //                 <span className="mr-1 opacity-80">Esperada:</span>
+  //                 {/* Si viene en LaTeX ($...$ o $$...$$) se muestra como ecuación; si no, como texto/valor */}
+  //                 <MathBlock text={props.feedback.valorEsperado} />
+  //               </div>
+  //             )}
+  //           </div>
+  //         )}
+  //       </div>
+  //     )}
+  //   </div>
+  // );
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
-      <div className="mb-3 text-sm font-medium text-gray-300">
-        <span className="mr-2 rounded bg-gray-800 px-2 py-0.5 text-xs text-gray-300">
-          {props.index}
-        </span>
-        {/* Render enunciado: si trae LaTeX entre $...$ o $$...$$ se muestra como ecuación */}
-        <p className="inline">
-          <MathInline text={props.enunciado ?? ""} />
-        </p>
-      </div>
+  <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
+    <div className="mb-3 text-sm font-medium text-gray-800">
+      <span className="mr-2 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+        {props.index}
+      </span>
 
-      {/* Render según tipo */}
-      {props.tipo === "MCQ" ? (
-        <div className="space-y-2">
-          {props.opciones.map(([key, label]) => {
-            const id = `${props.name}_${key}`;
-
-            let optionClasses = "rounded-lg border border-gray-800 bg-gray-900/50";
-            if (props.feedback) {
-              const marcada = props.feedback.opcionMarcada;
-              const correcta = props.feedback.opcionCorrecta ?? undefined;
-
-              if (key === correcta) optionClasses = "rounded-lg border border-emerald-600 bg-emerald-700/20";
-              if (marcada && key === marcada && !props.feedback.esCorrecta)
-                optionClasses = "rounded-lg border border-rose-600 bg-rose-700/20";
-            }
-
-            return (
-              <label
-                key={key}
-                htmlFor={id}
-                className={`flex items-center gap-3 px-3 py-2 ${
-                  props.disabled ? "opacity-70 cursor-not-allowed" : "cursor-pointer hover:bg-gray-800/60"
-                } ${optionClasses}`}
-              >
-                <input
-                  id={id}
-                  type="radio"
-                  name={props.name}
-                  value={key}
-                  checked={props.value === key}
-                  onChange={() => !props.disabled && props.onChangeRadio(key)}
-                  className="h-4 w-4 accent-blue-500"
-                  disabled={props.disabled}
-                />
-                <span className="text-sm text-gray-100">
-                  <span className="mr-2 rounded bg-gray-800 px-1.5 py-0.5 text-xs text-gray-300">
-                    {key}
-                  </span>
-                  <MathInline text={label} />
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      ) : props.tipo === "OPEN_NUM" ? (
-        <div className="space-y-2">
-          <input
-            type="number"
-            className="w-full rounded-lg border border-gray-800 bg-gray-900/50 px-3 py-2 text-sm text-gray-100 outline-none focus:ring-1 focus:ring-blue-600"
-            value={props.openValueNumber ?? ""}
-            onChange={(e) => props.onChangeOpenNumber(e.target.value === "" ? undefined : Number(e.target.value))}
-            disabled={props.disabled}
-            placeholder="Escribe un número..."
-          />
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <label className="block text-xs text-gray-400">
-            Puedes escribir tu respuesta en LaTeX, por ejemplo:{" "}
-            <code className="font-mono text-[11px] text-gray-300">
-              {"f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},\\ 0<y<2"}
-            </code>
-          </label>
-
-          <textarea
-            className="w-full min-h-[80px] rounded-lg border border-gray-800 bg-gray-900/50 px-3 py-2 text-sm text-gray-100 outline-none focus:ring-1 focus:ring-blue-600"
-            value={props.openValueText ?? ""}
-            onChange={(e) => props.onChangeOpenText(e.target.value)}
-            disabled={props.disabled}
-            placeholder="Escribe aquí tu expresión (se acepta LaTeX)..."
-          />
-
-          {/* Preview en tiempo real (usa KaTeX si parece matemática) */}
-          {props.openValueText && (
-            <div className="mt-1 text-xs text-gray-400">
-              Vista previa:
-              <MathBlock text={props.openValueText} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Feedback */}
-      {props.feedback && (
-        <div className="mt-3 text-xs">
-          {props.feedback.tipo === "MCQ" ? (
-            props.feedback.esCorrecta ? (
-              <span className="rounded bg-emerald-700/20 px-2 py-0.5 text-emerald-300">¡Correcto!</span>
-            ) : (
-              <span className="rounded bg-rose-700/20 px-2 py-0.5 text-rose-300">
-                Incorrecto · Correcta: <b>{props.feedback.opcionCorrecta ?? "—"}</b>
-              </span>
-            )
-          ) : props.feedback.esCorrecta ? (
-            <span className="rounded bg-emerald-700/20 px-2 py-0.5 text-emerald-300">¡Respuesta correcta!</span>
-          ) : (
-            <div className="rounded bg-rose-700/20 px-2 py-1 text-rose-200">
-              <div>Incorrecta</div>
-              {props.feedback.valorEsperado && (
-                <div className="mt-1">
-                  <span className="mr-1 opacity-80">Esperada:</span>
-                  {/* Si viene en LaTeX ($...$ o $$...$$) se muestra como ecuación; si no, como texto/valor */}
-                  <MathBlock text={props.feedback.valorEsperado} />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <p className="inline">
+        <MathInline text={props.enunciado ?? ""} />
+      </p>
     </div>
-  );
+
+    {props.tipo === "MCQ" ? (
+      <div className="space-y-2">
+        {props.opciones.map(([key, label]) => {
+          const id = `${props.name}_${key}`;
+
+          // estilos base
+          let optionClasses =
+            "rounded-lg border border-gray-300 bg-gray-50";
+
+          // estilos feedback
+          if (props.feedback) {
+            const marcada = props.feedback.opcionMarcada;
+            const correcta = props.feedback.opcionCorrecta ?? undefined;
+
+            if (key === correcta)
+              optionClasses =
+                "rounded-lg border border-emerald-400 bg-emerald-100";
+
+            if (marcada && key === marcada && !props.feedback.esCorrecta)
+              optionClasses = "rounded-lg border border-rose-400 bg-rose-100";
+          }
+
+          return (
+            <label
+              key={key}
+              htmlFor={id}
+              className={`flex items-center gap-3 px-3 py-2 ${
+                props.disabled
+                  ? "opacity-60 cursor-not-allowed"
+                  : "cursor-pointer hover:bg-gray-100"
+              } ${optionClasses}`}
+            >
+              <input
+                id={id}
+                type="radio"
+                name={props.name}
+                value={key}
+                checked={props.value === key}
+                onChange={() => !props.disabled && props.onChangeRadio(key)}
+                className="h-4 w-4 accent-blue-500"
+                disabled={props.disabled}
+              />
+
+              <span className="text-sm text-gray-800">
+                <span className="mr-2 rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-700">
+                  {key}
+                </span>
+
+                <MathInline text={label} />
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    ) : props.tipo === "OPEN_NUM" ? (
+      <div className="space-y-2">
+        <input
+          type="number"
+          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
+          value={props.openValueNumber ?? ""}
+          onChange={(e) =>
+            props.onChangeOpenNumber(
+              e.target.value === "" ? undefined : Number(e.target.value)
+            )
+          }
+          disabled={props.disabled}
+          placeholder="Escribe un número..."
+        />
+      </div>
+    ) : (
+      <div className="space-y-2">
+        <label className="block text-xs text-gray-600">
+          Puedes escribir tu respuesta en LaTeX, por ejemplo:{" "}
+          <code className="font-mono text-[11px] text-gray-800">
+            {"f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},\\ 0<y<2"}
+          </code>
+        </label>
+
+        <textarea
+          className="w-full min-h-[80px] rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
+          value={props.openValueText ?? ""}
+          onChange={(e) => props.onChangeOpenText(e.target.value)}
+          disabled={props.disabled}
+          placeholder="Escribe aquí tu expresión (se acepta LaTeX)..."
+        />
+
+        {props.openValueText && (
+          <div className="mt-1 text-xs text-gray-600">
+            Vista previa:
+            <MathBlock text={props.openValueText} />
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* FEEDBACK LIGHT THEME */}
+    {props.feedback && (
+      <div className="mt-3 text-xs">
+        {props.feedback.tipo === "MCQ" ? (
+          props.feedback.esCorrecta ? (
+            <span className="rounded bg-emerald-100 px-2 py-0.5 text-emerald-700">
+              ¡Correcto!
+            </span>
+          ) : (
+            <span className="rounded bg-rose-100 px-2 py-0.5 text-rose-700">
+              Incorrecto · Correcta: <b>{props.feedback.opcionCorrecta ?? "—"}</b>
+            </span>
+          )
+        ) : props.feedback.esCorrecta ? (
+          <span className="rounded bg-emerald-100 px-2 py-0.5 text-emerald-700">
+            ¡Respuesta correcta!
+          </span>
+        ) : (
+          <div className="rounded bg-rose-100 px-2 py-1 text-rose-700">
+            <div>Incorrecta</div>
+
+            {props.feedback.valorEsperado && (
+              <div className="mt-1">
+                <span className="mr-1 opacity-70">Esperada:</span>
+                <MathBlock text={props.feedback.valorEsperado} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
+
 }
 
 function Loader() {

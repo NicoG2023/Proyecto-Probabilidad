@@ -410,6 +410,91 @@ export default function EstudianteDashboard() {
 
 /* ============ UI Components ============ */
 
+// function ActionCard(props: {
+//   title: string;
+//   subtitle?: string;
+//   accent: "blue" | "amber" | "slate";
+//   loading?: boolean;
+//   onClick: () => void;
+// }) {
+//   const accentClasses =
+//     props.accent === "blue"
+//       ? "from-blue-600 to-blue-500"
+//       : props.accent === "amber"
+//       ? "from-amber-600 to-amber-500"
+//       : "from-slate-600 to-slate-500";
+
+//   return (
+//     <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
+//       <div
+//         className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-30 blur-lg`}
+//       />
+//       <h3 className="mb-1 text-base font-semibold text-gray-100">
+//         {props.title}
+//       </h3>
+//       {props.subtitle && (
+//         <p className="mb-4 text-sm text-gray-400">{props.subtitle}</p>
+//       )}
+//       <button
+//         onClick={props.onClick}
+//         disabled={props.loading}
+//         className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-amber-500 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+//       >
+//         {props.loading ? (
+//           <>
+//             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+//             Iniciando…
+//           </>
+//         ) : (
+//           <>Comenzar</>
+//         )}
+//       </button>
+//     </div>
+//   );
+// }
+
+// function KpiCard(props: { label: string; value: string | number | null | undefined }) {
+//   return (
+//     <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+//       <div className="text-xs uppercase tracking-wide text-gray-400">
+//         {props.label}
+//       </div>
+//       <div className="mt-2 text-2xl font-semibold text-gray-100">
+//         {props.value ?? "—"}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function SkeletonTable() {
+//   return (
+//     <div className="space-y-2">
+//       {Array.from({ length: 4 }).map((_, i) => (
+//         <div key={i} className="h-9 animate-pulse rounded-md bg-gray-800/50" />
+//       ))}
+//     </div>
+//   );
+// }
+
+// function EmptyState() {
+//   return (
+//     <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-4">
+//       <div>
+//         <p className="text-sm text-gray-300">
+//           Aún no hay estadísticas para mostrar.
+//         </p>
+//         <p className="text-xs text-gray-500">
+//           Realiza tu primer intento para ver promedios y tu historial.
+//         </p>
+//       </div>
+//       <div className="hidden rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-300 md:block">
+//         Tip: empieza por C1
+//       </div>
+//     </div>
+//   );
+// }
+
+
 function ActionCard(props: {
   title: string;
   subtitle?: string;
@@ -493,7 +578,6 @@ function EmptyState() {
     </div>
   );
 }
-
 /* ============ Helpers ============ */
 
 function average(nums: number[]) {
