@@ -79,80 +79,155 @@ export default function QuizPreviewPage() {
   }, [preview]);
 
   return (
-    <section className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        {/* Encabezado */}
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">
-              Vista del intento
-            </h1>
-            <p className="text-sm text-gray-400">
-              Intento #{intentoId}
-              {preview?.quizTitulo ? ` · ${preview.quizTitulo}` : ""}
-              {preview?.estado ? ` · ${preview.estado}` : ""}
-            </p>
-            {preview && (
-              <p className="mt-1 text-xs text-gray-500">
-                Alumno:{" "}
-                <span className="text-gray-200">
-                  {preview.estudianteUsername ?? "—"}
+    // <section className="min-h-screen bg-gray-950 text-gray-100">
+    //   <div className="mx-auto max-w-5xl px-4 py-8">
+    //     {/* Encabezado */}
+    //     <header className="mb-6 flex items-center justify-between">
+    //       <div>
+    //         <h1 className="text-xl font-semibold">
+    //           Vista del intento
+    //         </h1>
+    //         <p className="text-sm text-gray-400">
+    //           Intento #{intentoId}
+    //           {preview?.quizTitulo ? ` · ${preview.quizTitulo}` : ""}
+    //           {preview?.estado ? ` · ${preview.estado}` : ""}
+    //         </p>
+    //         {preview && (
+    //           <p className="mt-1 text-xs text-gray-500">
+    //             Alumno:{" "}
+    //             <span className="text-gray-200">
+    //               {preview.estudianteUsername ?? "—"}
+    //             </span>
+    //             {preview.estudianteEmail && (
+    //               <>
+    //                 {" · "}
+    //                 <span className="text-gray-300">
+    //                   {preview.estudianteEmail}
+    //                 </span>
+    //               </>
+    //             )}
+    //           </p>
+    //         )}
+    //       </div>
+
+    //       <div className="flex items-center gap-2">
+    //         {notaNum != null && (
+    //           <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs text-blue-300 border border-blue-500/40">
+    //             Nota: {notaNum.toFixed(2)}%
+    //           </span>
+    //         )}
+    //         <Link
+    //           to="/profesor"
+    //           className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800"
+    //         >
+    //           ← Volver al panel
+    //         </Link>
+    //       </div>
+    //     </header>
+
+    //     {/* Mensajes de estado */}
+    //     {loading && <Loader />}
+
+    //     {!loading && error && (
+    //       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300 text-sm">
+    //         {error}
+    //       </div>
+    //     )}
+
+    //     {!loading && !error && preview && (
+    //       <div className="space-y-6">
+    //         {preguntas.length === 0 ? (
+    //           <div className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-sm text-gray-400">
+    //             Este intento no tiene preguntas registradas.
+    //           </div>
+    //         ) : (
+    //           preguntas.map((p, idx) => (
+    //             <PreguntaPreviewCard
+    //               key={p.instanciaId}
+    //               index={idx + 1}
+    //               pregunta={p}
+    //             />
+    //           ))
+    //         )}
+    //       </div>
+    //     )}
+    //   </div>
+    // </section>
+    <section className="min-h-screen bg-white text-black">
+  <div className="mx-auto max-w-5xl px-4 py-8">
+    {/* Encabezado */}
+    <header className="mb-6 flex items-center justify-between">
+      <div>
+        <h1 className="text-xl font-semibold text-black">
+          Vista del intento
+        </h1>
+        <p className="text-sm text-gray-600">
+          Intento #{intentoId}
+          {preview?.quizTitulo ? ` · ${preview.quizTitulo}` : ""}
+          {preview?.estado ? ` · ${preview.estado}` : ""}
+        </p>
+        {preview && (
+          <p className="mt-1 text-xs text-gray-500">
+            Alumno:{" "}
+            <span className="text-black">
+              {preview.estudianteUsername ?? "—"}
+            </span>
+            {preview.estudianteEmail && (
+              <>
+                {" · "}
+                <span className="text-gray-700">
+                  {preview.estudianteEmail}
                 </span>
-                {preview.estudianteEmail && (
-                  <>
-                    {" · "}
-                    <span className="text-gray-300">
-                      {preview.estudianteEmail}
-                    </span>
-                  </>
-                )}
-              </p>
+              </>
             )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {notaNum != null && (
-              <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs text-blue-300 border border-blue-500/40">
-                Nota: {notaNum.toFixed(2)}%
-              </span>
-            )}
-            <Link
-              to="/profesor"
-              className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800"
-            >
-              ← Volver al panel
-            </Link>
-          </div>
-        </header>
-
-        {/* Mensajes de estado */}
-        {loading && <Loader />}
-
-        {!loading && error && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300 text-sm">
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && preview && (
-          <div className="space-y-6">
-            {preguntas.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-sm text-gray-400">
-                Este intento no tiene preguntas registradas.
-              </div>
-            ) : (
-              preguntas.map((p, idx) => (
-                <PreguntaPreviewCard
-                  key={p.instanciaId}
-                  index={idx + 1}
-                  pregunta={p}
-                />
-              ))
-            )}
-          </div>
+          </p>
         )}
       </div>
-    </section>
+
+      <div className="flex items-center gap-2">
+        {notaNum != null && (
+          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700 border border-blue-300">
+            Nota: {notaNum.toFixed(2)}%
+          </span>
+        )}
+        <Link
+          to="/profesor"
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-black hover:bg-gray-100"
+        >
+          ← Volver al panel
+        </Link>
+      </div>
+    </header>
+
+    {/* Mensajes de estado */}
+    {loading && <Loader />}
+
+    {!loading && error && (
+      <div className="rounded-lg border border-yellow-400 bg-yellow-100 p-4 text-yellow-800 text-sm">
+        {error}
+      </div>
+    )}
+
+    {!loading && !error && preview && (
+      <div className="space-y-6">
+        {preguntas.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600">
+            Este intento no tiene preguntas registradas.
+          </div>
+        ) : (
+          preguntas.map((p, idx) => (
+            <PreguntaPreviewCard
+              key={p.instanciaId}
+              index={idx + 1}
+              pregunta={p}
+            />
+          ))
+        )}
+      </div>
+    )}
+  </div>
+</section>
+
   );
 }
 

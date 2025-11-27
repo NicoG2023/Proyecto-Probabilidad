@@ -149,171 +149,328 @@ export default function ProfesorDashboard() {
   );
 
   return (
-    <section className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        {/* Encabezado */}
-        <header className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Panel del Profesor
-          </h1>
-          <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm text-blue-300">
-            Seguimiento de alumnos · Quices
-          </span>
-        </header>
+    // <section className="min-h-screen bg-gray-950 text-gray-100">
+    //   <div className="mx-auto max-w-6xl px-4 py-10">
+    //     {/* Encabezado */}
+    //     <header className="mb-8 flex items-center justify-between">
+    //       <h1 className="text-2xl font-semibold tracking-tight">
+    //         Panel del Profesor
+    //       </h1>
+    //       <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm text-blue-300">
+    //         Seguimiento de alumnos · Quices
+    //       </span>
+    //     </header>
 
-        {/* ================= Gráficas ================= */}
-        <section className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-200">
-              Estadísticas generales
-            </h2>
-            {chartsError && (
-              <span className="text-xs text-amber-300">{chartsError}</span>
-            )}
-          </div>
+    //     {/* ================= Gráficas ================= */}
+    //     <section className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
+    //       <div className="mb-4 flex items-center justify-between">
+    //         <h2 className="text-lg font-medium text-gray-200">
+    //           Estadísticas generales
+    //         </h2>
+    //         {chartsError && (
+    //           <span className="text-xs text-amber-300">{chartsError}</span>
+    //         )}
+    //       </div>
 
-          {loadingCharts ? (
-            <div className="grid gap-6 md:grid-cols-2">
-              <SkeletonChart />
-              <SkeletonChart />
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2">
-              <ChartCard
-                title="Top 10 alumnos por quices realizados"
-                subtitle="Cantidad total de intentos por alumno"
-              >
-                {topAttempts.length === 0 ? (
-                  <EmptyChartState />
-                ) : (
-                  <SimpleBarChart
-                    data={topAttempts}
-                    getLabel={(d) => d.username ?? `ID ${d.studentId}`}
-                    getValue={(d) => d.attemptsCount}
-                    maxValue={maxAttempts}
-                  />
-                )}
-              </ChartCard>
+    //       {loadingCharts ? (
+    //         <div className="grid gap-6 md:grid-cols-2">
+    //           <SkeletonChart />
+    //           <SkeletonChart />
+    //         </div>
+    //       ) : (
+    //         <div className="grid gap-6 md:grid-cols-2">
+    //           <ChartCard
+    //             title="Top 10 alumnos por quices realizados"
+    //             subtitle="Cantidad total de intentos por alumno"
+    //           >
+    //             {topAttempts.length === 0 ? (
+    //               <EmptyChartState />
+    //             ) : (
+    //               <SimpleBarChart
+    //                 data={topAttempts}
+    //                 getLabel={(d) => d.username ?? `ID ${d.studentId}`}
+    //                 getValue={(d) => d.attemptsCount}
+    //                 maxValue={maxAttempts}
+    //               />
+    //             )}
+    //           </ChartCard>
 
-              <ChartCard
-                title="Top 5 alumnos por quices aprobados"
-                subtitle="Quices con nota ≥ 60"
-              >
-                {topPassed.length === 0 ? (
-                  <EmptyChartState />
-                ) : (
-                  <SimpleBarChart
-                    data={topPassed}
-                    getLabel={(d) => d.username ?? `ID ${d.studentId}`}
-                    getValue={(d) => d.passedCount}
-                    maxValue={maxPassed}
-                    accent="amber"
-                  />
-                )}
-              </ChartCard>
-            </div>
-          )}
-        </section>
+    //           <ChartCard
+    //             title="Top 5 alumnos por quices aprobados"
+    //             subtitle="Quices con nota ≥ 60"
+    //           >
+    //             {topPassed.length === 0 ? (
+    //               <EmptyChartState />
+    //             ) : (
+    //               <SimpleBarChart
+    //                 data={topPassed}
+    //                 getLabel={(d) => d.username ?? `ID ${d.studentId}`}
+    //                 getValue={(d) => d.passedCount}
+    //                 maxValue={maxPassed}
+    //                 accent="amber"
+    //               />
+    //             )}
+    //           </ChartCard>
+    //         </div>
+    //       )}
+    //     </section>
 
-        {/* ================= Tabla de alumnos ================= */}
-        <section className="mt-10">
-          <h2 className="mb-4 text-lg font-medium text-gray-200">
-            Alumnos y quices
-          </h2>
+    //     {/* ================= Tabla de alumnos ================= */}
+    //     <section className="mt-10">
+    //       <h2 className="mb-4 text-lg font-medium text-gray-200">
+    //         Alumnos y quices
+    //       </h2>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-200">
-                Lista de alumnos
-              </h3>
-              {studentsError && (
-                <span className="text-xs text-amber-300">{studentsError}</span>
-              )}
-            </div>
+    //       <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-4">
+    //         <div className="mb-3 flex items-center justify-between">
+    //           <h3 className="text-sm font-medium text-gray-200">
+    //             Lista de alumnos
+    //           </h3>
+    //           {studentsError && (
+    //             <span className="text-xs text-amber-300">{studentsError}</span>
+    //           )}
+    //         </div>
 
-            {loadingStudents ? (
-              <SkeletonTable />
-            ) : students.length === 0 ? (
-              <EmptyState
-                title="Aún no hay alumnos con quices."
-                subtitle="Cuando los estudiantes presenten sus quices, aparecerán aquí."
-              />
-            ) : (
-              <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-800/80 bg-gray-950/40">
-                <table className="w-full table-auto border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-gray-900/80 text-left text-xs uppercase tracking-wide text-gray-400">
-                      <th className="border-b border-gray-800 px-3 py-2">
-                        Alumno
-                      </th>
-                      <th className="border-b border-gray-800 px-3 py-2">
-                        Intentos
-                      </th>
-                      <th className="border-b border-gray-800 px-3 py-2">
-                        Promedio
-                      </th>
-                      <th className="border-b border-gray-800 px-3 py-2 text-right">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((s) => (
-                      <tr
-                        key={s.id}
-                        className="border-b border-gray-900/60 text-xs last:border-b-0 hover:bg-gray-800/40"
-                      >
-                        <td className="px-3 py-2 align-middle">
-                          <div className="flex flex-col">
-                            <span className="text-gray-100">
-                              {s.username ?? `ID ${s.id}`}
-                            </span>
-                            {s.email && (
-                              <span className="text-[11px] text-gray-400">
-                                {s.email}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 align-middle text-gray-200">
-                          {s.attemptsCount ?? 0}
-                        </td>
-                        <td className="px-3 py-2 align-middle text-gray-200">
-                          {formatMaybeNumber(s.avgScore, 1, "%")}
-                        </td>
-                        <td className="px-3 py-2 align-middle text-right">
-                          <button
-                            onClick={() => handleConsultar(s)}
-                            className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-3 py-1.5 text-[11px] font-medium text-gray-900 shadow-sm shadow-amber-500/40 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-amber-400/70"
-                          >
-                            Consultar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
+    //         {loadingStudents ? (
+    //           <SkeletonTable />
+    //         ) : students.length === 0 ? (
+    //           <EmptyState
+    //             title="Aún no hay alumnos con quices."
+    //             subtitle="Cuando los estudiantes presenten sus quices, aparecerán aquí."
+    //           />
+    //         ) : (
+    //           <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-800/80 bg-gray-950/40">
+    //             <table className="w-full table-auto border-collapse text-sm">
+    //               <thead>
+    //                 <tr className="bg-gray-900/80 text-left text-xs uppercase tracking-wide text-gray-400">
+    //                   <th className="border-b border-gray-800 px-3 py-2">
+    //                     Alumno
+    //                   </th>
+    //                   <th className="border-b border-gray-800 px-3 py-2">
+    //                     Intentos
+    //                   </th>
+    //                   <th className="border-b border-gray-800 px-3 py-2">
+    //                     Promedio
+    //                   </th>
+    //                   <th className="border-b border-gray-800 px-3 py-2 text-right">
+    //                     Acciones
+    //                   </th>
+    //                 </tr>
+    //               </thead>
+    //               <tbody>
+    //                 {students.map((s) => (
+    //                   <tr
+    //                     key={s.id}
+    //                     className="border-b border-gray-900/60 text-xs last:border-b-0 hover:bg-gray-800/40"
+    //                   >
+    //                     <td className="px-3 py-2 align-middle">
+    //                       <div className="flex flex-col">
+    //                         <span className="text-gray-100">
+    //                           {s.username ?? `ID ${s.id}`}
+    //                         </span>
+    //                         {s.email && (
+    //                           <span className="text-[11px] text-gray-400">
+    //                             {s.email}
+    //                           </span>
+    //                         )}
+    //                       </div>
+    //                     </td>
+    //                     <td className="px-3 py-2 align-middle text-gray-200">
+    //                       {s.attemptsCount ?? 0}
+    //                     </td>
+    //                     <td className="px-3 py-2 align-middle text-gray-200">
+    //                       {formatMaybeNumber(s.avgScore, 1, "%")}
+    //                     </td>
+    //                     <td className="px-3 py-2 align-middle text-right">
+    //                       <button
+    //                         onClick={() => handleConsultar(s)}
+    //                         className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-3 py-1.5 text-[11px] font-medium text-gray-900 shadow-sm shadow-amber-500/40 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+    //                       >
+    //                         Consultar
+    //                       </button>
+    //                     </td>
+    //                   </tr>
+    //                 ))}
+    //               </tbody>
+    //             </table>
+    //           </div>
+    //         )}
+    //       </div>
+    //     </section>
+    //   </div>
+
+    //   {/* ========= Modal de quices del alumno ========= */}
+    //   {isModalOpen && selectedStudent && (
+    //     <AttemptsModal
+    //       student={selectedStudent}
+    //       attempts={attempts}
+    //       loading={loadingAttempts}
+    //       error={attemptsError}
+    //       onClose={closeModal}
+    //       onPreview={(attemptId) => {
+    //         setIsModalOpen(false);
+    //         navigate(`/preview/intentos/${attemptId}`);
+    //       }}
+    //     />
+    //   )}
+    // </section>
+    <section className="min-h-screen bg-white text-black">
+  <div className="mx-auto max-w-6xl px-4 py-10">
+
+    {/* Encabezado */}
+    <header className="mb-8 flex items-center justify-between">
+      <h1 className="text-2xl font-semibold tracking-tight">Panel del Profesor</h1>
+
+      <span className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">
+        Seguimiento de alumnos · Quices
+      </span>
+    </header>
+
+    {/* ================= Gráficas ================= */}
+    <section className="rounded-2xl border border-gray-300 bg-gray-100 p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-medium text-gray-800">Estadísticas generales</h2>
+
+        {chartsError && (
+          <span className="text-xs text-amber-600">{chartsError}</span>
+        )}
       </div>
 
-      {/* ========= Modal de quices del alumno ========= */}
-      {isModalOpen && selectedStudent && (
-        <AttemptsModal
-          student={selectedStudent}
-          attempts={attempts}
-          loading={loadingAttempts}
-          error={attemptsError}
-          onClose={closeModal}
-          onPreview={(attemptId) => {
-            setIsModalOpen(false);
-            navigate(`/preview/intentos/${attemptId}`);
-          }}
-        />
+      {loadingCharts ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          <SkeletonChart />
+          <SkeletonChart />
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          <ChartCard
+            title="Top 10 alumnos por quices realizados"
+            subtitle="Cantidad total de intentos por alumno"
+          >
+            {topAttempts.length === 0 ? (
+              <EmptyChartState />
+            ) : (
+              <SimpleBarChart
+                data={topAttempts}
+                getLabel={(d) => d.username ?? `ID ${d.studentId}`}
+                getValue={(d) => d.attemptsCount}
+                maxValue={maxAttempts}
+              />
+            )}
+          </ChartCard>
+
+          <ChartCard
+            title="Top 5 alumnos por quices aprobados"
+            subtitle="Quices con nota ≥ 60"
+          >
+            {topPassed.length === 0 ? (
+              <EmptyChartState />
+            ) : (
+              <SimpleBarChart
+                data={topPassed}
+                getLabel={(d) => d.username ?? `ID ${d.studentId}`}
+                getValue={(d) => d.passedCount}
+                maxValue={maxPassed}
+                accent="amber"
+              />
+            )}
+          </ChartCard>
+        </div>
       )}
     </section>
+
+    {/* ================= Tabla de alumnos ================= */}
+    <section className="mt-10">
+      <h2 className="mb-4 text-lg font-medium text-gray-800">Alumnos y quices</h2>
+
+      <div className="rounded-2xl border border-gray-300 bg-gray-100 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-800">Lista de alumnos</h3>
+          {studentsError && (
+            <span className="text-xs text-amber-600">{studentsError}</span>
+          )}
+        </div>
+
+        {loadingStudents ? (
+          <SkeletonTable />
+        ) : students.length === 0 ? (
+          <EmptyState
+            title="Aún no hay alumnos con quices."
+            subtitle="Cuando los estudiantes presenten sus quices, aparecerán aquí."
+          />
+        ) : (
+          <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-300 bg-gray-50">
+            <table className="w-full table-auto border-collapse text-sm">
+              <thead>
+                <tr className="bg-gray-200 text-left text-xs uppercase tracking-wide text-gray-600">
+                  <th className="border-b border-gray-300 px-3 py-2">Alumno</th>
+                  <th className="border-b border-gray-300 px-3 py-2">Intentos</th>
+                  <th className="border-b border-gray-300 px-3 py-2">Promedio</th>
+                  <th className="border-b border-gray-300 px-3 py-2 text-right">Acciones</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {students.map((s) => (
+                  <tr
+                    key={s.id}
+                    className="border-b border-gray-200 text-xs last:border-b-0 hover:bg-gray-100"
+                  >
+                    <td className="px-3 py-2 align-middle">
+                      <div className="flex flex-col">
+                        <span className="text-gray-900">
+                          {s.username ?? `ID ${s.id}`}
+                        </span>
+                        {s.email && (
+                          <span className="text-[11px] text-gray-600">
+                            {s.email}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="px-3 py-2 align-middle text-gray-800">
+                      {s.attemptsCount ?? 0}
+                    </td>
+
+                    <td className="px-3 py-2 align-middle text-gray-800">
+                      {formatMaybeNumber(s.avgScore, 1, "%")}
+                    </td>
+
+                    <td className="px-3 py-2 align-middle text-right">
+                      <button
+                        onClick={() => handleConsultar(s)}
+                        className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 px-3 py-1.5 text-[11px] font-medium text-black shadow-sm shadow-amber-300/40 hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-amber-400/70"
+                      >
+                        Consultar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  </div>
+
+  {/* ========= Modal de quices del alumno ========= */}
+  {isModalOpen && selectedStudent && (
+    <AttemptsModal
+      student={selectedStudent}
+      attempts={attempts}
+      loading={loadingAttempts}
+      error={attemptsError}
+      onClose={closeModal}
+      onPreview={(attemptId) => {
+        setIsModalOpen(false);
+        navigate(`/preview/intentos/${attemptId}`);
+      }}
+    />
+  )}
+</section>
+
   );
 }
 

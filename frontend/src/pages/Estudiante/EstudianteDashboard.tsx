@@ -89,163 +89,322 @@ export default function EstudianteDashboard() {
   };
 
   return (
-    <section className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        {/* Encabezado */}
-        <header className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Panel del Estudiante
-          </h1>
-          <span className="rounded-full bg-amber-500/20 px-3 py-1 text-sm text-amber-300">
-            Quices · C1 · C2 · C3
-          </span>
-        </header>
+    <section className="min-h-screen bg-white text-gray-900">
+  <div className="mx-auto max-w-6xl px-4 py-10">
+    {/* Encabezado */}
+    <header className="mb-8 flex items-center justify-between">
+      <h1 className="text-2xl font-semibold tracking-tight">
+        Panel del Estudiante
+      </h1>
 
-        {/* Acciones: Tomar Quiz */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <ActionCard
-            title="Tomar Quiz - Corte 1"
-            subtitle="Primer corte (C1)"
-            accent="blue"
-            loading={starting === "C1"}
-            onClick={() => handleStartQuiz("C1")}
-          />
-          <ActionCard
-            title="Tomar Quiz - Corte 2"
-            subtitle="Segundo corte (C2)"
-            accent="amber"
-            loading={starting === "C2"}
-            onClick={() => handleStartQuiz("C2")}
-          />
-          <ActionCard
-            title="Tomar Quiz - Corte 3"
-            subtitle="Tercer corte (C3)"
-            accent="slate"
-            loading={starting === "C3"}
-            onClick={() => handleStartQuiz("C3")}
-          />
-        </div>
+      <span className="rounded-full bg-gray-200 px-3 py-1 text-sm text-gray-700">
+        Quices · C1 · C2 · C3
+      </span>
+    </header>
 
-        {/* Error global */}
-        {error && (
-          <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300">
-            {error}
-          </div>
+    {/* Acciones: Tomar Quiz */}
+    <div className="grid gap-6 md:grid-cols-3">
+      <ActionCard
+        title="Tomar Quiz - Corte 1"
+        subtitle="Primer corte (C1)"
+        accent="blue"
+        loading={starting === "C1"}
+        onClick={() => handleStartQuiz("C1")}
+      />
+      <ActionCard
+        title="Tomar Quiz - Corte 2"
+        subtitle="Segundo corte (C2)"
+        accent="amber"
+        loading={starting === "C2"}
+        onClick={() => handleStartQuiz("C2")}
+      />
+      <ActionCard
+        title="Tomar Quiz - Corte 3"
+        subtitle="Tercer corte (C3)"
+        accent="slate"
+        loading={starting === "C3"}
+        onClick={() => handleStartQuiz("C3")}
+      />
+    </div>
+
+    {/* Error global */}
+    {error && (
+      <div className="mt-6 rounded-lg border border-amber-500/40 bg-amber-100 p-4 text-amber-800">
+        {error}
+      </div>
+    )}
+
+    {/* Estadísticas */}
+    <section className="mt-10">
+      <h2 className="mb-4 text-lg font-medium text-gray-700">
+        Mis estadísticas
+      </h2>
+
+      {/* KPIs */}
+      <div className="grid gap-6 md:grid-cols-4">
+        <KpiCard
+          label="Intentos presentados"
+          value={loadingStats ? "…" : stats?.intentos ?? 0}
+        />
+        <KpiCard
+          label="Promedio global"
+          value={
+            loadingStats ? "…" : formatMaybeNumber(stats?.promedio, 2, "%")
+          }
+        />
+        <KpiCard
+          label="Promedio C1"
+          value={
+            loadingStats ? "…" : formatMaybeNumber(promedios.C1, 2, "%")
+          }
+        />
+        <KpiCard
+          label="Promedio C2"
+          value={
+            loadingStats ? "…" : formatMaybeNumber(promedios.C2, 2, "%")
+          }
+        />
+      </div>
+
+      {/* Última tarjeta C3 */}
+      <div className="mt-6 grid gap-6 md:grid-cols-1">
+        <KpiCard
+          label="Promedio C3"
+          value={
+            loadingStats ? "…" : formatMaybeNumber(promedios.C3, 2, "%")
+          }
+        />
+      </div>
+
+      {/* Últimos intentos */}
+      <div className="mt-8 rounded-xl border border-gray-300 bg-gray-50 p-4 shadow-sm">
+        <h3 className="mb-3 text-base font-medium text-gray-700">
+          Últimos intentos
+        </h3>
+
+        {loadingHist ? (
+          <SkeletonTable />
+        ) : historial.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <table className="w-full table-auto border-collapse text-sm">
+            <thead>
+              <tr className="text-left text-gray-600">
+                <th className="border-b border-gray-300 px-2 py-2">ID</th>
+                <th className="border-b border-gray-300 px-2 py-2">Corte</th>
+                <th className="border-b border-gray-300 px-2 py-2">Nota</th>
+                <th className="border-b border-gray-300 px-2 py-2">Estado</th>
+                <th className="border-b border-gray-300 px-2 py-2">Fecha</th>
+                <th className="border-b border-gray-300 px-2 py-2 text-right">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {historial.map((it) => (
+                <tr
+                  key={it.id}
+                  className="hover:bg-gray-100 transition-colors"
+                >
+                  <td className="border-b border-gray-300 px-2 py-2">{it.id}</td>
+                  <td className="border-b border-gray-300 px-2 py-2">{it?.quiz?.corte ?? "—"}</td>
+                  <td className="border-b border-gray-300 px-2 py-2">{formatMaybeNumber(it?.score, 2, "%")}</td>
+
+                  {/* Estado */}
+                  <td className="border-b border-gray-300 px-2 py-2">
+                    <StudentStatusPill status={it.status} />
+                  </td>
+
+                  {/* Fecha */}
+                  <td className="border-b border-gray-300 px-2 py-2">
+                    {it.submittedAt
+                      ? new Date(it.submittedAt).toLocaleString()
+                      : it.startedAt
+                      ? new Date(it.startedAt).toLocaleString()
+                      : "—"}
+                  </td>
+
+                  {/* Acciones */}
+                  <td className="border-b border-gray-300 px-2 py-2 text-right">
+                    {it.status && it.status !== "PRESENTADO" ? (
+                      <button
+                        onClick={() => navigate(`/estudiante/quices/${it.id}`)}
+                        className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition"
+                      >
+                        {it.status === "EN_PROGRESO" ? "Continuar" : "Retomar"}
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-gray-500">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
-
-        {/* Estadísticas */}
-        <section className="mt-10">
-          <h2 className="mb-4 text-lg font-medium text-gray-200">
-            Mis estadísticas
-          </h2>
-
-          <div className="grid gap-6 md:grid-cols-4">
-            <KpiCard
-              label="Intentos presentados"
-              value={loadingStats ? "…" : stats?.intentos ?? 0}
-            />
-            <KpiCard
-              label="Promedio global"
-              value={
-                loadingStats ? "…" : formatMaybeNumber(stats?.promedio, 2, "%")
-              }
-            />
-            <KpiCard
-              label="Promedio C1"
-              value={
-                loadingStats ? "…" : formatMaybeNumber(promedios.C1, 2, "%")
-              }
-            />
-            <KpiCard
-              label="Promedio C2"
-              value={
-                loadingStats ? "…" : formatMaybeNumber(promedios.C2, 2, "%")
-              }
-            />
-          </div>
-
-          <div className="mt-6 grid gap-6 md:grid-cols-1">
-            <KpiCard
-              label="Promedio C3"
-              value={
-                loadingStats ? "…" : formatMaybeNumber(promedios.C3, 2, "%")
-              }
-            />
-          </div>
-
-          {/* Últimos intentos */}
-          <div className="mt-8 rounded-xl border border-gray-800 bg-gray-900/50 p-4">
-            <h3 className="mb-3 text-base font-medium text-gray-200">
-              Últimos intentos
-            </h3>
-
-            {loadingHist ? (
-              <SkeletonTable />
-            ) : historial.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <table className="w-full table-auto border-collapse text-sm">
-                <thead>
-                  <tr className="text-left text-gray-400">
-                    <th className="border-b border-gray-800 px-2 py-2">ID</th>
-                    <th className="border-b border-gray-800 px-2 py-2">Corte</th>
-                    <th className="border-b border-gray-800 px-2 py-2">Nota</th>
-                    <th className="border-b border-gray-800 px-2 py-2">Estado</th>
-                    <th className="border-b border-gray-800 px-2 py-2">Fecha</th>
-                    <th className="border-b border-gray-800 px-2 py-2 text-right">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historial.map((it) => (
-                    <tr key={it.id} className="hover:bg-gray-800/40">
-                      <td className="border-b border-gray-800 px-2 py-2">
-                        {it.id}
-                      </td>
-                      <td className="border-b border-gray-800 px-2 py-2">
-                        {it?.quiz?.corte ?? "—"}
-                      </td>
-                      <td className="border-b border-gray-800 px-2 py-2">
-                        {formatMaybeNumber(it?.score, 2, "%")}
-                      </td>
-
-                      {/* ESTADO */}
-                      <td className="border-b border-gray-800 px-2 py-2">
-                        <StudentStatusPill status={it.status} />
-                      </td>
-
-                      {/* FECHA */}
-                      <td className="border-b border-gray-800 px-2 py-2">
-                        {it.submittedAt
-                          ? new Date(it.submittedAt).toLocaleString()
-                          : it.startedAt
-                          ? new Date(it.startedAt).toLocaleString()
-                          : "—"}
-                      </td>
-
-                      {/* ACCIONES */}
-                      <td className="border-b border-gray-800 px-2 py-2 text-right">
-                        {it.status && it.status !== "PRESENTADO" ? (
-                          <button
-                            onClick={() => navigate(`/estudiante/quices/${it.id}`)}
-                            className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-3 py-1.5 text-xs font-medium text-white hover:opacity-95"
-                          >
-                            {it.status === "EN_PROGRESO" ? "Continuar" : "Retomar"}
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-gray-500">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </section>
       </div>
     </section>
+  </div>
+</section>
+
+    // <section className="min-h-screen bg-gray-950 text-gray-100">
+    //   <div className="mx-auto max-w-6xl px-4 py-10">
+    //     {/* Encabezado */}
+    //     <header className="mb-8 flex items-center justify-between">
+    //       <h1 className="text-2xl font-semibold tracking-tight">
+    //         Panel del Estudiante
+    //       </h1>
+    //       <span className="rounded-full bg-amber-500/20 px-3 py-1 text-sm text-amber-300">
+    //         Quices · C1 · C2 · C3
+    //       </span>
+    //     </header>
+
+    //     {/* Acciones: Tomar Quiz */}
+    //     <div className="grid gap-6 md:grid-cols-3">
+    //       <ActionCard
+    //         title="Tomar Quiz - Corte 1"
+    //         subtitle="Primer corte (C1)"
+    //         accent="blue"
+    //         loading={starting === "C1"}
+    //         onClick={() => handleStartQuiz("C1")}
+    //       />
+    //       <ActionCard
+    //         title="Tomar Quiz - Corte 2"
+    //         subtitle="Segundo corte (C2)"
+    //         accent="amber"
+    //         loading={starting === "C2"}
+    //         onClick={() => handleStartQuiz("C2")}
+    //       />
+    //       <ActionCard
+    //         title="Tomar Quiz - Corte 3"
+    //         subtitle="Tercer corte (C3)"
+    //         accent="slate"
+    //         loading={starting === "C3"}
+    //         onClick={() => handleStartQuiz("C3")}
+    //       />
+    //     </div>
+
+    //     {/* Error global */}
+    //     {error && (
+    //       <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300">
+    //         {error}
+    //       </div>
+    //     )}
+
+    //     {/* Estadísticas */}
+    //     <section className="mt-10">
+    //       <h2 className="mb-4 text-lg font-medium text-gray-200">
+    //         Mis estadísticas
+    //       </h2>
+
+    //       <div className="grid gap-6 md:grid-cols-4">
+    //         <KpiCard
+    //           label="Intentos presentados"
+    //           value={loadingStats ? "…" : stats?.intentos ?? 0}
+    //         />
+    //         <KpiCard
+    //           label="Promedio global"
+    //           value={
+    //             loadingStats ? "…" : formatMaybeNumber(stats?.promedio, 2, "%")
+    //           }
+    //         />
+    //         <KpiCard
+    //           label="Promedio C1"
+    //           value={
+    //             loadingStats ? "…" : formatMaybeNumber(promedios.C1, 2, "%")
+    //           }
+    //         />
+    //         <KpiCard
+    //           label="Promedio C2"
+    //           value={
+    //             loadingStats ? "…" : formatMaybeNumber(promedios.C2, 2, "%")
+    //           }
+    //         />
+    //       </div>
+
+    //       <div className="mt-6 grid gap-6 md:grid-cols-1">
+    //         <KpiCard
+    //           label="Promedio C3"
+    //           value={
+    //             loadingStats ? "…" : formatMaybeNumber(promedios.C3, 2, "%")
+    //           }
+    //         />
+    //       </div>
+
+    //       {/* Últimos intentos */}
+    //       <div className="mt-8 rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+    //         <h3 className="mb-3 text-base font-medium text-gray-200">
+    //           Últimos intentos
+    //         </h3>
+
+    //         {loadingHist ? (
+    //           <SkeletonTable />
+    //         ) : historial.length === 0 ? (
+    //           <EmptyState />
+    //         ) : (
+    //           <table className="w-full table-auto border-collapse text-sm">
+    //             <thead>
+    //               <tr className="text-left text-gray-400">
+    //                 <th className="border-b border-gray-800 px-2 py-2">ID</th>
+    //                 <th className="border-b border-gray-800 px-2 py-2">Corte</th>
+    //                 <th className="border-b border-gray-800 px-2 py-2">Nota</th>
+    //                 <th className="border-b border-gray-800 px-2 py-2">Estado</th>
+    //                 <th className="border-b border-gray-800 px-2 py-2">Fecha</th>
+    //                 <th className="border-b border-gray-800 px-2 py-2 text-right">
+    //                   Acciones
+    //                 </th>
+    //               </tr>
+    //             </thead>
+    //             <tbody>
+    //               {historial.map((it) => (
+    //                 <tr key={it.id} className="hover:bg-gray-800/40">
+    //                   <td className="border-b border-gray-800 px-2 py-2">
+    //                     {it.id}
+    //                   </td>
+    //                   <td className="border-b border-gray-800 px-2 py-2">
+    //                     {it?.quiz?.corte ?? "—"}
+    //                   </td>
+    //                   <td className="border-b border-gray-800 px-2 py-2">
+    //                     {formatMaybeNumber(it?.score, 2, "%")}
+    //                   </td>
+
+    //                   {/* ESTADO */}
+    //                   <td className="border-b border-gray-800 px-2 py-2">
+    //                     <StudentStatusPill status={it.status} />
+    //                   </td>
+
+    //                   {/* FECHA */}
+    //                   <td className="border-b border-gray-800 px-2 py-2">
+    //                     {it.submittedAt
+    //                       ? new Date(it.submittedAt).toLocaleString()
+    //                       : it.startedAt
+    //                       ? new Date(it.startedAt).toLocaleString()
+    //                       : "—"}
+    //                   </td>
+
+    //                   {/* ACCIONES */}
+    //                   <td className="border-b border-gray-800 px-2 py-2 text-right">
+    //                     {it.status && it.status !== "PRESENTADO" ? (
+    //                       <button
+    //                         onClick={() => navigate(`/estudiante/quices/${it.id}`)}
+    //                         className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-3 py-1.5 text-xs font-medium text-white hover:opacity-95"
+    //                       >
+    //                         {it.status === "EN_PROGRESO" ? "Continuar" : "Retomar"}
+    //                       </button>
+    //                     ) : (
+    //                       <span className="text-[11px] text-gray-500">—</span>
+    //                     )}
+    //                   </td>
+    //                 </tr>
+    //               ))}
+    //             </tbody>
+    //           </table>
+    //         )}
+    //       </div>
+    //     </section>
+    //   </div>
+    // </section>
   );
 }
 

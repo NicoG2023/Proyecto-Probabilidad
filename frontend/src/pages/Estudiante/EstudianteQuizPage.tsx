@@ -228,142 +228,317 @@ export default function EstudianteQuizPage() {
   const aprobado = notaNum != null ? notaNum >= 75 : null;
 
   return (
-    <section className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <header className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">Quiz</h1>
-            <p className="text-sm text-gray-400">
-              Intento #{intentoId} {vista?.quizId ? `· Quiz ${vista.quizId}` : ""} {vista?.estado ? `· ${vista.estado}` : ""}
-            </p>
+    // <section className="min-h-screen bg-gray-950 text-gray-100">
+    //   <div className="mx-auto max-w-5xl px-4 py-8">
+    //     <header className="mb-6 flex items-center justify-between">
+    //       <div>
+    //         <h1 className="text-xl font-semibold">Quiz</h1>
+    //         <p className="text-sm text-gray-400">
+    //           Intento #{intentoId} {vista?.quizId ? `· Quiz ${vista.quizId}` : ""} {vista?.estado ? `· ${vista.estado}` : ""}
+    //         </p>
+    //       </div>
+    //       <Link
+    //         to="/"
+    //         className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800"
+    //       >
+    //         ← Volver al panel
+    //       </Link>
+    //     </header>
+
+    //     {resultado && (
+    //       <div
+    //         className={`mb-6 rounded-xl border p-4 text-sm ${
+    //           aprobado
+    //             ? "border-emerald-700/40 bg-emerald-700/15 text-emerald-200"
+    //             : "border-rose-700/40 bg-rose-700/15 text-rose-200"
+    //         }`}
+    //       >
+    //         <div>
+    //           Intento #{resultado.intentoId} <b className="mx-1">calificado</b>.{" "}
+    //           Nota: <b>{resultado.nota?.toFixed(2) ?? "—"}%</b> · Correctas {resultado.correctas}/{resultado.totalPreguntas}.
+    //         </div>
+    //       </div>
+    //     )}
+
+    //     {loading && <Loader />}
+
+    //     {!loading && error && (
+    //       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300">
+    //         {error}
+    //       </div>
+    //     )}
+
+    //     {!loading && !error && vista && (
+    //       <div className="space-y-6">
+    //         {preguntas.length === 0 ? (
+    //           <div className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-sm text-gray-400">
+    //             Este intento aún no tiene preguntas.
+    //           </div>
+    //         ) : (
+    //           preguntas.map((p, idx) => {
+    //             const sel = seleccion[p.instanciaId] ?? {};
+    //             return (
+    //               <QuestionCard
+    //                 key={p.instanciaId}
+    //                 index={idx + 1}
+    //                 enunciado={p.enunciado}
+    //                 opciones={p.opcionesOrdenadas}
+    //                 tipo={p.tipo as TipoPregunta}
+    //                 name={`q_${p.instanciaId}`}
+    //                 value={sel.opcionMarcada ?? ""}
+    //                 openValueText={sel.valorTexto ?? ""}
+    //                 openValueNumber={sel.valorNumero}
+    //                 onChangeRadio={(val) =>
+    //                   setSeleccion((s) => ({
+    //                     ...s,
+    //                     [p.instanciaId]: { ...s[p.instanciaId], opcionMarcada: val, valorTexto: undefined, valorNumero: undefined },
+    //                   }))
+    //                 }
+    //                 onChangeOpenText={(val) =>
+    //                   setSeleccion((s) => ({
+    //                     ...s,
+    //                     [p.instanciaId]: { ...s[p.instanciaId], valorTexto: val, opcionMarcada: undefined, valorNumero: undefined },
+    //                   }))
+    //                 }
+    //                 onChangeOpenNumber={(val) =>
+    //                   setSeleccion((s) => ({
+    //                     ...s,
+    //                     [p.instanciaId]: { ...s[p.instanciaId], valorNumero: val, opcionMarcada: undefined, valorTexto: undefined },
+    //                   }))
+    //                 }
+    //                 disabled={yaPresentado}
+    //                 feedback={p.feedback}
+    //               />
+    //             );
+    //           })
+    //         )}
+
+    //         <div className="sticky bottom-4 mt-8 flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900/70 p-3 backdrop-blur">
+    //           <div className="text-xs text-gray-400">
+    //             Preguntas: {preguntas.length}
+    //             {resultado && (
+    //               <span
+    //                 className={`ml-3 rounded px-2 py-0.5 ${
+    //                   aprobado ? "bg-emerald-600/20 text-emerald-300" : "bg-rose-600/20 text-rose-300"
+    //                 }`}
+    //               >
+    //                 Nota: {resultado.nota?.toFixed(2) ?? "—"}% · Correctas {resultado.correctas}/{resultado.totalPreguntas}
+    //               </span>
+    //             )}
+    //             {yaPresentado && !resultado && (
+    //               <span className="ml-3 rounded bg-sky-600/20 px-2 py-0.5 text-sky-300">Intento enviado</span>
+    //             )}
+    //           </div>
+
+    //           <div className="flex items-center gap-2">
+    //             <button
+    //               type="button"
+    //               className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800"
+    //               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+    //             >
+    //               Subir
+    //             </button>
+
+    //             <button
+    //               type="button"
+    //               onClick={handleGuardar}
+    //               disabled={saving || submitting || yaPresentado}
+    //               className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800 disabled:opacity-60"
+    //               title={yaPresentado ? "El intento ya fue enviado" : "Guardar respuestas"}
+    //             >
+    //               {saving ? "Guardando…" : "Guardar"}
+    //             </button>
+
+    //             <button
+    //               type="button"
+    //               onClick={handleEnviar}
+    //               disabled={submitting || yaPresentado}
+    //               className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-60"
+    //               title={yaPresentado ? "El intento ya fue enviado" : "Enviar y calificar"}
+    //             >
+    //               {submitting ? "Enviando…" : "Enviar"}
+    //             </button>
+    //           </div>
+    //         </div>
+    //       </div>
+    //     )}
+    //   </div>
+    // </section>
+    <section className="min-h-screen bg-white text-black">
+  <div className="mx-auto max-w-5xl px-4 py-8">
+
+    {/* ENCABEZADO */}
+    <header className="mb-6 flex items-center justify-between">
+      <div>
+        <h1 className="text-xl font-semibold">Quiz</h1>
+        <p className="text-sm text-gray-600">
+          Intento #{intentoId} {vista?.quizId ? `· Quiz ${vista.quizId}` : ""}{" "}
+          {vista?.estado ? `· ${vista.estado}` : ""}
+        </p>
+      </div>
+      <Link
+        to="/"
+        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-black hover:bg-gray-100"
+      >
+        ← Volver al panel
+      </Link>
+    </header>
+
+    {/* RESULTADO */}
+    {resultado && (
+      <div
+        className={`mb-6 rounded-xl border p-4 text-sm ${
+          aprobado
+            ? "border-emerald-400 bg-emerald-100 text-emerald-800"
+            : "border-rose-400 bg-rose-100 text-rose-800"
+        }`}
+      >
+        <div>
+          Intento #{resultado.intentoId}{" "}
+          <b className="mx-1">calificado</b>. Nota:{" "}
+          <b>{resultado.nota?.toFixed(2) ?? "—"}%</b> · Correctas{" "}
+          {resultado.correctas}/{resultado.totalPreguntas}.
+        </div>
+      </div>
+    )}
+
+    {/* LOADING */}
+    {loading && <Loader />}
+
+    {/* ERROR */}
+    {!loading && error && (
+      <div className="rounded-lg border border-amber-300 bg-amber-100 p-4 text-amber-800">
+        {error}
+      </div>
+    )}
+
+    {/* CONTENIDO */}
+    {!loading && !error && vista && (
+      <div className="space-y-6">
+
+        {/* SIN PREGUNTAS */}
+        {preguntas.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-100 p-6 text-sm text-gray-600">
+            Este intento aún no tiene preguntas.
           </div>
-          <Link
-            to="/"
-            className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800"
-          >
-            ← Volver al panel
-          </Link>
-        </header>
-
-        {resultado && (
-          <div
-            className={`mb-6 rounded-xl border p-4 text-sm ${
-              aprobado
-                ? "border-emerald-700/40 bg-emerald-700/15 text-emerald-200"
-                : "border-rose-700/40 bg-rose-700/15 text-rose-200"
-            }`}
-          >
-            <div>
-              Intento #{resultado.intentoId} <b className="mx-1">calificado</b>.{" "}
-              Nota: <b>{resultado.nota?.toFixed(2) ?? "—"}%</b> · Correctas {resultado.correctas}/{resultado.totalPreguntas}.
-            </div>
-          </div>
-        )}
-
-        {loading && <Loader />}
-
-        {!loading && error && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300">
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && vista && (
-          <div className="space-y-6">
-            {preguntas.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-800 bg-gray-900/40 p-6 text-sm text-gray-400">
-                Este intento aún no tiene preguntas.
-              </div>
-            ) : (
-              preguntas.map((p, idx) => {
-                const sel = seleccion[p.instanciaId] ?? {};
-                return (
-                  <QuestionCard
-                    key={p.instanciaId}
-                    index={idx + 1}
-                    enunciado={p.enunciado}
-                    opciones={p.opcionesOrdenadas}
-                    tipo={p.tipo as TipoPregunta}
-                    name={`q_${p.instanciaId}`}
-                    value={sel.opcionMarcada ?? ""}
-                    openValueText={sel.valorTexto ?? ""}
-                    openValueNumber={sel.valorNumero}
-                    onChangeRadio={(val) =>
-                      setSeleccion((s) => ({
-                        ...s,
-                        [p.instanciaId]: { ...s[p.instanciaId], opcionMarcada: val, valorTexto: undefined, valorNumero: undefined },
-                      }))
-                    }
-                    onChangeOpenText={(val) =>
-                      setSeleccion((s) => ({
-                        ...s,
-                        [p.instanciaId]: { ...s[p.instanciaId], valorTexto: val, opcionMarcada: undefined, valorNumero: undefined },
-                      }))
-                    }
-                    onChangeOpenNumber={(val) =>
+        ) : (
+          preguntas.map((p, idx) => {
+            const sel = seleccion[p.instanciaId] ?? {};
+            return (
+              <QuestionCard
+                key={p.instanciaId}
+                index={idx + 1}
+                enunciado={p.enunciado}
+                opciones={p.opcionesOrdenadas}
+                tipo={p.tipo}
+                name={`q_${p.instanciaId}`}
+                value={sel.opcionMarcada ?? ""}
+                openValueText={sel.valorTexto ?? ""}
+                openValueNumber={sel.valorNumero}
+                onChangeRadio={(val) =>
+                  setSeleccion((s) => ({
+                    ...s,
+                    [p.instanciaId]: {
+                      ...s[p.instanciaId],
+                      opcionMarcada: val,
+                      valorTexto: undefined,
+                      valorNumero: undefined,
+                    },
+                  }))
+                }
+                onChangeOpenText={(val) =>
+                  setSeleccion((s) => ({
+                    ...s,
+                    [p.instanciaId]: {
+                      ...s[p.instanciaId],
+                      valorTexto: val,
+                      opcionMarcada: undefined,
+                      valorNumero: undefined,
+                    },
+                  }))
+                }
+                onChangeOpenNumber={(val) =>
                       setSeleccion((s) => ({
                         ...s,
                         [p.instanciaId]: { ...s[p.instanciaId], valorNumero: val, opcionMarcada: undefined, valorTexto: undefined },
                       }))
                     }
-                    disabled={yaPresentado}
-                    feedback={p.feedback}
-                  />
-                );
-              })
-            )}
-
-            <div className="sticky bottom-4 mt-8 flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900/70 p-3 backdrop-blur">
-              <div className="text-xs text-gray-400">
-                Preguntas: {preguntas.length}
-                {resultado && (
-                  <span
-                    className={`ml-3 rounded px-2 py-0.5 ${
-                      aprobado ? "bg-emerald-600/20 text-emerald-300" : "bg-rose-600/20 text-rose-300"
-                    }`}
-                  >
-                    Nota: {resultado.nota?.toFixed(2) ?? "—"}% · Correctas {resultado.correctas}/{resultado.totalPreguntas}
-                  </span>
-                )}
-                {yaPresentado && !resultado && (
-                  <span className="ml-3 rounded bg-sky-600/20 px-2 py-0.5 text-sky-300">Intento enviado</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                >
-                  Subir
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleGuardar}
-                  disabled={saving || submitting || yaPresentado}
-                  className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-800 disabled:opacity-60"
-                  title={yaPresentado ? "El intento ya fue enviado" : "Guardar respuestas"}
-                >
-                  {saving ? "Guardando…" : "Guardar"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleEnviar}
-                  disabled={submitting || yaPresentado}
-                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-60"
-                  title={yaPresentado ? "El intento ya fue enviado" : "Enviar y calificar"}
-                >
-                  {submitting ? "Enviando…" : "Enviar"}
-                </button>
-              </div>
-            </div>
-          </div>
+                disabled={yaPresentado}
+                feedback={p.feedback}
+              />
+            );
+          })
         )}
+
+        {/* BARRA INFERIOR */}
+        <div className="sticky bottom-4 mt-8 flex items-center justify-between rounded-xl border border-gray-300 bg-gray-100 p-3 backdrop-blur">
+          <div className="text-xs text-gray-600">
+            Preguntas: {preguntas.length}
+            {resultado && (
+              <span
+                className={`ml-3 rounded px-2 py-0.5 ${
+                  aprobado
+                    ? "bg-emerald-200 text-emerald-800"
+                    : "bg-rose-200 text-rose-800"
+                }`}
+              >
+                Nota: {resultado.nota?.toFixed(2) ?? "—"}% · Correctas{" "}
+                {resultado.correctas}/{resultado.totalPreguntas}
+              </span>
+            )}
+            {yaPresentado && !resultado && (
+              <span className="ml-3 rounded bg-blue-200 px-2 py-0.5 text-blue-800">
+                Intento enviado
+              </span>
+            )}
+          </div>
+
+          {/* BOTONES */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-black hover:bg-gray-200"
+              onClick={() =>
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              }
+            >
+              Subir
+            </button>
+
+            <button
+              type="button"
+              onClick={handleGuardar}
+              disabled={saving || submitting || yaPresentado}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-black hover:bg-gray-200 disabled:opacity-60"
+              title={
+                yaPresentado
+                  ? "El intento ya fue enviado"
+                  : "Guardar respuestas"
+              }
+            >
+              {saving ? "Guardando…" : "Guardar"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleEnviar}
+              disabled={submitting || yaPresentado}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-60"
+              title={
+                yaPresentado
+                  ? "El intento ya fue enviado"
+                  : "Enviar y calificar"
+              }
+            >
+              {submitting ? "Enviando…" : "Enviar"}
+            </button>
+          </div>
+        </div>
       </div>
-    </section>
+    )}
+  </div>
+</section>
+
   );
 }
 

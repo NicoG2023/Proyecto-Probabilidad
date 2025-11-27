@@ -26,7 +26,7 @@ export default function AppLayout() {
   }, [authenticated, isAdmin, location.pathname, location.state, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div className="min-h-screen bg-white text-black">
       {/* Navbar visible siempre (autenticado o no) */}
       <NavBar />
 
