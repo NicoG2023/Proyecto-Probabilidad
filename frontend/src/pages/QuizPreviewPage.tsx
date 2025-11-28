@@ -233,7 +233,153 @@ export default function QuizPreviewPage() {
 
 /* ========== Cards ========== */
 
-function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: PreguntaEnriquecida }) {
+// function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: PreguntaEnriquecida }) {
+//   const {
+//     enunciado,
+//     opcionesOrdenadas,
+//     tipoNormalizado,
+//     opcionMarcada,
+//     opcionCorrecta,
+//     valorIngresado,
+//     valorEsperado,
+//     numeroIngresado,
+//     numeroEsperado,
+//     esCorrecta,
+//   } = pregunta;
+
+//   return (
+//     <article className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+//       {/* Enunciado */}
+//       <div className="mb-3 flex items-start justify-between gap-3">
+//         <div className="text-sm font-medium text-gray-300">
+//           <span className="mr-2 rounded bg-gray-800 px-2 py-0.5 text-xs text-gray-300">
+//             {index}
+//           </span>
+//           <span className="align-middle">
+//             <MathInline text={enunciado ?? ""} />
+//           </span>
+//         </div>
+
+//         <span
+//           className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+//             esCorrecta
+//               ? "bg-emerald-600/15 text-emerald-300 border border-emerald-500/40"
+//               : "bg-rose-600/15 text-rose-200 border border-rose-500/40"
+//           }`}
+//         >
+//           {esCorrecta ? "Correcta" : "Incorrecta"}
+//         </span>
+//       </div>
+
+//       {/* Cuerpo según tipo */}
+//       {tipoNormalizado === "MCQ" ? (
+//         <div className="space-y-2 mt-2">
+//           {opcionesOrdenadas.map(([key, label]) => {
+//             const isMarked = key === opcionMarcada;
+//             const isCorrectKey = key === opcionCorrecta;
+
+//             let base =
+//               "flex items-center gap-3 px-3 py-2 rounded-lg border text-sm";
+//             let colors =
+//               "border-gray-800 bg-gray-900/50 text-gray-100";
+
+//             if (isCorrectKey && isMarked) {
+//               colors =
+//                 "border-emerald-600 bg-emerald-700/20 text-emerald-100";
+//             } else if (isCorrectKey && !isMarked) {
+//               colors =
+//                 "border-emerald-500/60 bg-emerald-700/10 text-emerald-100";
+//             } else if (isMarked && !isCorrectKey) {
+//               colors =
+//                 "border-rose-600 bg-rose-700/20 text-rose-100";
+//             }
+
+//             return (
+//               <div key={key} className={`${base} ${colors}`}>
+//                 <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-600 text-[10px]">
+//                   {key}
+//                 </div>
+//                 <div className="flex-1">
+//                   <MathInline text={label} />
+//                 </div>
+//                 {isMarked && (
+//                   <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">
+//                     Marcada
+//                   </span>
+//                 )}
+//                 {isCorrectKey && (
+//                   <span className="ml-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-200">
+//                     Correcta
+//                   </span>
+//                 )}
+//               </div>
+//             );
+//           })}
+//         </div>
+//       ) : tipoNormalizado === "OPEN_TEXT" ? (
+//         <div className="mt-3 grid gap-3 md:grid-cols-2">
+//           <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
+//             <p className="mb-1 font-semibold text-gray-300">
+//               Respuesta del estudiante
+//             </p>
+//             {valorIngresado ? (
+//               <MathBlock text={valorIngresado} />
+//             ) : (
+//               <p className="text-gray-500 italic">Sin respuesta.</p>
+//             )}
+//           </div>
+
+//           <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
+//             <p className="mb-1 font-semibold text-gray-300">
+//               Respuesta esperada
+//             </p>
+//             {valorEsperado ? (
+//               <MathBlock text={valorEsperado} />
+//             ) : (
+//               <p className="text-gray-500 italic">No definida.</p>
+//             )}
+//           </div>
+//         </div>
+//       ) : (
+//         /* OPEN_NUM */
+//         <div className="mt-3 grid gap-3 md:grid-cols-2">
+//           <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
+//             <p className="mb-1 font-semibold text-gray-300">
+//               Valor ingresado
+//             </p>
+//             {numeroIngresado != null ? (
+//               <span className="font-mono text-sm text-gray-100">
+//                 {numeroIngresado}
+//               </span>
+//             ) : (
+//               <p className="text-gray-500 italic">Sin respuesta.</p>
+//             )}
+//           </div>
+
+//           <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
+//             <p className="mb-1 font-semibold text-gray-300">
+//               Valor esperado
+//             </p>
+//             {numeroEsperado != null ? (
+//               <span className="font-mono text-sm text-gray-100">
+//                 {numeroEsperado}
+//               </span>
+//             ) : (
+//               <p className="text-gray-500 italic">No definido.</p>
+//             )}
+//           </div>
+//         </div>
+//       )}
+//     </article>
+//   );
+// }
+function PreguntaPreviewCard({
+  index,
+  pregunta,
+}: {
+  index: number;
+  pregunta: PreguntaEnriquecida;
+}) {
   const {
     enunciado,
     opcionesOrdenadas,
@@ -248,11 +394,11 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
   } = pregunta;
 
   return (
-    <article className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+    <article className="rounded-2xl border border-gray-300 bg-white p-5">
       {/* Enunciado */}
       <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="text-sm font-medium text-gray-300">
-          <span className="mr-2 rounded bg-gray-800 px-2 py-0.5 text-xs text-gray-300">
+        <div className="text-sm font-medium text-gray-900">
+          <span className="mr-2 rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
             {index}
           </span>
           <span className="align-middle">
@@ -261,10 +407,10 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
         </div>
 
         <span
-          className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+          className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${
             esCorrecta
-              ? "bg-emerald-600/15 text-emerald-300 border border-emerald-500/40"
-              : "bg-rose-600/15 text-rose-200 border border-rose-500/40"
+              ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+              : "bg-rose-100 text-rose-700 border-rose-300"
           }`}
         >
           {esCorrecta ? "Correcta" : "Incorrecta"}
@@ -281,34 +427,37 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
             let base =
               "flex items-center gap-3 px-3 py-2 rounded-lg border text-sm";
             let colors =
-              "border-gray-800 bg-gray-900/50 text-gray-100";
+              "border-gray-300 bg-gray-100 text-gray-900";
 
             if (isCorrectKey && isMarked) {
               colors =
-                "border-emerald-600 bg-emerald-700/20 text-emerald-100";
+                "border-emerald-400 bg-emerald-100 text-emerald-700";
             } else if (isCorrectKey && !isMarked) {
               colors =
-                "border-emerald-500/60 bg-emerald-700/10 text-emerald-100";
+                "border-emerald-300 bg-emerald-50 text-emerald-700";
             } else if (isMarked && !isCorrectKey) {
               colors =
-                "border-rose-600 bg-rose-700/20 text-rose-100";
+                "border-rose-400 bg-rose-100 text-rose-700";
             }
 
             return (
               <div key={key} className={`${base} ${colors}`}>
-                <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-600 text-[10px]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full border border-gray-400 text-[10px] text-gray-700">
                   {key}
                 </div>
-                <div className="flex-1">
+
+                <div className="flex-1 text-gray-900">
                   <MathInline text={label} />
                 </div>
+
                 {isMarked && (
-                  <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-200">
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-700 border border-blue-200">
                     Marcada
                   </span>
                 )}
+
                 {isCorrectKey && (
-                  <span className="ml-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-200">
+                  <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 border border-emerald-200">
                     Correcta
                   </span>
                 )}
@@ -318,8 +467,8 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
         </div>
       ) : tipoNormalizado === "OPEN_TEXT" ? (
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
-            <p className="mb-1 font-semibold text-gray-300">
+          <div className="rounded-xl border border-gray-300 bg-white p-3 text-xs">
+            <p className="mb-1 font-semibold text-gray-800">
               Respuesta del estudiante
             </p>
             {valorIngresado ? (
@@ -329,8 +478,8 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
             )}
           </div>
 
-          <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
-            <p className="mb-1 font-semibold text-gray-300">
+          <div className="rounded-xl border border-gray-300 bg-white p-3 text-xs">
+            <p className="mb-1 font-semibold text-gray-800">
               Respuesta esperada
             </p>
             {valorEsperado ? (
@@ -343,12 +492,12 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
       ) : (
         /* OPEN_NUM */
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
-            <p className="mb-1 font-semibold text-gray-300">
+          <div className="rounded-xl border border-gray-300 bg-white p-3 text-xs">
+            <p className="mb-1 font-semibold text-gray-800">
               Valor ingresado
             </p>
             {numeroIngresado != null ? (
-              <span className="font-mono text-sm text-gray-100">
+              <span className="font-mono text-sm text-gray-900">
                 {numeroIngresado}
               </span>
             ) : (
@@ -356,12 +505,12 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
             )}
           </div>
 
-          <div className="rounded-xl border border-gray-800 bg-gray-900/60 p-3 text-xs">
-            <p className="mb-1 font-semibold text-gray-300">
+          <div className="rounded-xl border border-gray-300 bg-white p-3 text-xs">
+            <p className="mb-1 font-semibold text-gray-800">
               Valor esperado
             </p>
             {numeroEsperado != null ? (
-              <span className="font-mono text-sm text-gray-100">
+              <span className="font-mono text-sm text-gray-900">
                 {numeroEsperado}
               </span>
             ) : (
@@ -373,6 +522,7 @@ function PreguntaPreviewCard({ index, pregunta }: { index: number; pregunta: Pre
     </article>
   );
 }
+
 
 /* ========== Loader ========== */
 

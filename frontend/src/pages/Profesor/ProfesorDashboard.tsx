@@ -584,96 +584,96 @@ function AttemptsModal(props: {
 }) {
   const { student, attempts, loading, error, onClose, onPreview } = props;
 
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
-      <div className="relative w-full max-w-3xl rounded-xl border border-gray-700 bg-gray-900/95 p-5">
-        {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-gray-100">
-              Quices de {student.username ?? `ID ${student.id}`}
-            </h3>
-            {student.email && (
-              <p className="text-xs text-gray-400">{student.email}</p>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="inline-flex h-8 items-center justify-center rounded-full border border-gray-600 bg-gray-800 px-3 text-xs text-gray-300 hover:bg-gray-700"
-          >
-            Cerrar
-          </button>
+ return (
+  <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+    <div className="relative w-full max-w-3xl rounded-xl border border-gray-300 bg-white p-5 shadow-xl">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">
+            Quices de {student.username ?? `ID ${student.id}`}
+          </h3>
+          {student.email && (
+            <p className="text-xs text-gray-600">{student.email}</p>
+          )}
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-3 rounded-lg border border-gray-600 bg-gray-800/30 p-2 text-xs text-gray-300">
-            {error}
-          </div>
-        )}
-
-        {/* Loading / Empty / Table */}
-        {loading ? (
-          <SkeletonTable />
-        ) : attempts.length === 0 ? (
-          <EmptyState
-            title="Este alumno aún no tiene quices."
-            subtitle="Cuando el alumno presente quices, verás aquí su historial."
-          />
-        ) : (
-          <div className="max-h-[420px] overflow-auto rounded-lg border border-gray-700 bg-gray-900/30">
-            <table className="w-full table-auto border-collapse text-sm">
-              <thead>
-                <tr className="bg-gray-800 text-left text-xs uppercase tracking-wide text-gray-400">
-                  <th className="border-b border-gray-700 px-3 py-2">Quiz</th>
-                  <th className="border-b border-gray-700 px-3 py-2">Corte</th>
-                  <th className="border-b border-gray-700 px-3 py-2">Nota</th>
-                  <th className="border-b border-gray-700 px-3 py-2">Estado</th>
-                  <th className="border-b border-gray-700 px-3 py-2 text-right">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {attempts.map((it) => (
-                  <tr
-                    key={it.attemptId}
-                    className="border-b border-gray-800 text-xs last:border-b-0 hover:bg-gray-800/30"
-                  >
-                    <td className="px-3 py-2 align-middle">
-                      <div className="flex flex-col">
-                        <span className="text-gray-100">{it.quizTitle}</span>
-                        <span className="text-[11px] text-gray-400">
-                          ID {it.attemptId}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 align-middle text-gray-300">
-                      {it.corte}
-                    </td>
-                    <td className="px-3 py-2 align-middle text-gray-300">
-                      {formatMaybeNumber(it.score, 1, "%")}
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <StatusPill status={it.status} />
-                    </td>
-                    <td className="px-3 py-2 align-middle text-right">
-                      <button
-                        onClick={() => onPreview(it.attemptId)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-gray-800 px-3 py-1.5 text-[11px] font-medium text-gray-100 hover:bg-gray-700"
-                      >
-                        Consultar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <button
+          onClick={onClose}
+          className="inline-flex h-8 items-center justify-center rounded-full border border-gray-300 bg-gray-100 px-3 text-xs text-gray-800 hover:bg-gray-200"
+        >
+          Cerrar
+        </button>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-3 rounded-lg border border-red-300 bg-red-50 p-2 text-xs text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Loading / Empty / Table */}
+      {loading ? (
+        <SkeletonTable />
+      ) : attempts.length === 0 ? (
+        <EmptyState
+          title="Este alumno aún no tiene quices."
+          subtitle="Cuando el alumno presente quices, verás aquí su historial."
+        />
+      ) : (
+        <div className="max-h-[420px] overflow-auto rounded-lg border border-gray-300 bg-gray-50">
+          <table className="w-full table-auto border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 text-left text-xs uppercase tracking-wide text-gray-700">
+                <th className="border-b border-gray-300 px-3 py-2">Quiz</th>
+                <th className="border-b border-gray-300 px-3 py-2">Corte</th>
+                <th className="border-b border-gray-300 px-3 py-2">Nota</th>
+                <th className="border-b border-gray-300 px-3 py-2">Estado</th>
+                <th className="border-b border-gray-300 px-3 py-2 text-right">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {attempts.map((it) => (
+                <tr
+                  key={it.attemptId}
+                  className="border-b border-gray-200 text-xs last:border-b-0 hover:bg-gray-100"
+                >
+                  <td className="px-3 py-2 align-middle">
+                    <div className="flex flex-col">
+                      <span className="text-gray-900">{it.quizTitle}</span>
+                      <span className="text-[11px] text-gray-500">
+                        ID {it.attemptId}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 align-middle text-gray-800">
+                    {it.corte}
+                  </td>
+                  <td className="px-3 py-2 align-middle text-gray-800">
+                    {formatMaybeNumber(it.score, 1, "%")}
+                  </td>
+                  <td className="px-3 py-2 align-middle">
+                    <StatusPill status={it.status} />
+                  </td>
+                  <td className="px-3 py-2 align-middle text-right">
+                    <button
+                      onClick={() => onPreview(it.attemptId)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-gray-200 px-3 py-1.5 text-[11px] font-medium text-gray-900 hover:bg-gray-300"
+                    >
+                      Consultar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 }
 
 /* ================== Componentes UI auxiliares ================== */

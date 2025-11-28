@@ -495,6 +495,49 @@ export default function EstudianteDashboard() {
 // }
 
 
+// function ActionCard(props: {
+//   title: string;
+//   subtitle?: string;
+//   accent: "blue" | "amber" | "slate";
+//   loading?: boolean;
+//   onClick: () => void;
+// }) {
+//   const accentClasses =
+//     props.accent === "blue"
+//       ? "from-blue-600 to-blue-500"
+//       : props.accent === "amber"
+//       ? "from-amber-600 to-amber-500"
+//       : "from-slate-600 to-slate-500";
+
+//   return (
+//     <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
+//       <div
+//         className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-30 blur-lg`}
+//       />
+//       <h3 className="mb-1 text-base font-semibold text-gray-100">
+//         {props.title}
+//       </h3>
+//       {props.subtitle && (
+//         <p className="mb-4 text-sm text-gray-400">{props.subtitle}</p>
+//       )}
+//       <button
+//         onClick={props.onClick}
+//         disabled={props.loading}
+//         className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-amber-500 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+//       >
+//         {props.loading ? (
+//           <>
+//             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+//             Iniciando…
+//           </>
+//         ) : (
+//           <>Comenzar</>
+//         )}
+//       </button>
+//     </div>
+//   );
+// }
+
 function ActionCard(props: {
   title: string;
   subtitle?: string;
@@ -504,26 +547,32 @@ function ActionCard(props: {
 }) {
   const accentClasses =
     props.accent === "blue"
-      ? "from-blue-600 to-blue-500"
+      ? "from-blue-400 to-blue-300"
       : props.accent === "amber"
-      ? "from-amber-600 to-amber-500"
-      : "from-slate-600 to-slate-500";
+      ? "from-amber-400 to-amber-300"
+      : "from-slate-400 to-slate-300";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
+    <div className="relative overflow-hidden rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
+      {/* Accent bubble */}
       <div
-        className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-30 blur-lg`}
+        className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-25 blur-xl`}
       />
-      <h3 className="mb-1 text-base font-semibold text-gray-100">
+
+      {/* Title */}
+      <h3 className="mb-1 text-base font-semibold text-gray-900">
         {props.title}
       </h3>
+
       {props.subtitle && (
-        <p className="mb-4 text-sm text-gray-400">{props.subtitle}</p>
+        <p className="mb-4 text-sm text-gray-600">{props.subtitle}</p>
       )}
+
+      {/* Button */}
       <button
         onClick={props.onClick}
         disabled={props.loading}
-        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-amber-500 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-amber-400 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {props.loading ? (
           <>
@@ -538,46 +587,102 @@ function ActionCard(props: {
   );
 }
 
+
+// function KpiCard(props: { label: string; value: string | number | null | undefined }) {
+//   return (
+//     <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
+//       <div className="text-xs uppercase tracking-wide text-gray-400">
+//         {props.label}
+//       </div>
+//       <div className="mt-2 text-2xl font-semibold text-gray-100">
+//         {props.value ?? "—"}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function KpiCard(props: { label: string; value: string | number | null | undefined }) {
+//   return (
+//     <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
+//       <div className="text-xs uppercase tracking-wide text-gray-600">
+//         {props.label}
+//       </div>
+//       <div className="mt-2 text-2xl font-semibold text-gray-900">
+//         {props.value ?? "—"}
+//       </div>
+//     </div>
+//   );
+// }
 function KpiCard(props: { label: string; value: string | number | null | undefined }) {
   return (
-    <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
-      <div className="text-xs uppercase tracking-wide text-gray-400">
+    <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-gray-600">
         {props.label}
       </div>
-      <div className="mt-2 text-2xl font-semibold text-gray-100">
+      <div className="mt-2 text-2xl font-semibold text-gray-900">
         {props.value ?? "—"}
       </div>
     </div>
   );
 }
 
+
+// function SkeletonTable() {
+//   return (
+//     <div className="space-y-2">
+//       {Array.from({ length: 4 }).map((_, i) => (
+//         <div key={i} className="h-9 animate-pulse rounded-md bg-gray-800/50" />
+//       ))}
+//     </div>
+//   );
+// }
+
 function SkeletonTable() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="h-9 animate-pulse rounded-md bg-gray-800/50" />
+        <div key={i} className="h-9 animate-pulse rounded-md bg-gray-200" />
       ))}
     </div>
   );
 }
 
+
+// function EmptyState() {
+//   return (
+//     <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-4">
+//       <div>
+//         <p className="text-sm text-gray-300">
+//           Aún no hay estadísticas para mostrar.
+//         </p>
+//         <p className="text-xs text-gray-500">
+//           Realiza tu primer intento para ver promedios y tu historial.
+//         </p>
+//       </div>
+//       <div className="hidden rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-300 md:block">
+//         Tip: empieza por C1
+//       </div>
+//     </div>
+//   );
+// }
+
 function EmptyState() {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-4">
+    <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
       <div>
-        <p className="text-sm text-gray-300">
-          Aún no hay estadísticas para mostrar.
-        </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-800">Aún no hay estadísticas para mostrar.</p>
+        <p className="text-xs text-gray-600">
           Realiza tu primer intento para ver promedios y tu historial.
         </p>
       </div>
-      <div className="hidden rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-300 md:block">
+
+      <div className="hidden rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700 md:block">
         Tip: empieza por C1
       </div>
     </div>
   );
 }
+
 /* ============ Helpers ============ */
 
 function average(nums: number[]) {
@@ -597,28 +702,56 @@ function formatMaybeNumber(
   return `${v.toFixed(decimals)}${suffix ?? ""}`;
 }
 
+// function StudentStatusPill(props: { status?: string | null }) {
+//   const status = props.status ?? "DESCONOCIDO";
+//   let label = status;
+//   let classes =
+//     "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium";
+
+//   if (status === "PRESENTADO") {
+//     label = "Presentado";
+//     classes +=
+//       " bg-emerald-500/15 text-emerald-300 border border-emerald-500/40";
+//   } else if (status === "EN_PROGRESO") {
+//     label = "En progreso";
+//     classes +=
+//       " bg-amber-500/15 text-amber-300 border border-amber-500/40";
+//   } else if (status === "CANCELADO") {
+//     label = "Cancelado";
+//     classes += " bg-red-500/15 text-red-300 border border-red-500/40";
+//   } else {
+//     label = status;
+//     classes += " bg-gray-700 text-gray-200";
+//   }
+
+//   return <span className={classes}>{label}</span>;
+// }
+
 function StudentStatusPill(props: { status?: string | null }) {
   const status = props.status ?? "DESCONOCIDO";
   let label = status;
   let classes =
-    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium";
+    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border";
 
   if (status === "PRESENTADO") {
     label = "Presentado";
     classes +=
-      " bg-emerald-500/15 text-emerald-300 border border-emerald-500/40";
+      " bg-emerald-100 text-emerald-700 border-emerald-300";
   } else if (status === "EN_PROGRESO") {
     label = "En progreso";
     classes +=
-      " bg-amber-500/15 text-amber-300 border border-amber-500/40";
+      " bg-amber-100 text-amber-700 border-amber-300";
   } else if (status === "CANCELADO") {
     label = "Cancelado";
-    classes += " bg-red-500/15 text-red-300 border border-red-500/40";
+    classes +=
+      " bg-red-100 text-red-700 border-red-300";
   } else {
     label = status;
-    classes += " bg-gray-700 text-gray-200";
+    classes +=
+      " bg-gray-100 text-gray-700 border-gray-300";
   }
 
   return <span className={classes}>{label}</span>;
 }
+
 
