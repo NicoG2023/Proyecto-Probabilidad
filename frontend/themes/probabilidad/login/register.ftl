@@ -19,10 +19,10 @@
 
       /* Fondo general */
       body, .login-pf, .kc-body{
-        background: radial-gradient(circle at 50% -20%, #102039 0%, var(--kc-bg) 60%, #0b1222 100%);
-        color: var(--kc-text);
-        font-family: Inter, Segoe UI, system-ui, -apple-system, Arial, sans-serif;
-      }
+      background: var(--kc-white) !important;
+      color: var(--kc-text-main);
+      font-family: Inter, Segoe UI, system-ui, -apple-system, Arial, sans-serif;
+    }
 
       /* Header / logo superior */
       .kc-header{

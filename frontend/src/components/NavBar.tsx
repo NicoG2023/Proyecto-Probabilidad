@@ -131,7 +131,7 @@ export default function NavBar({ title = 'Probabilidad' }: { title?: string }) {
     {/* Barra principal */}
     <nav
       aria-label="Top Navigation"
-      className="flex items-center justify-between rounded-2xl bg-gray-200 px-5 py-3 shadow-sm border border-gray-300"
+      className="flex items-center justify-between rounded-2xl bg-[#85B8FC] px-5 py-3 shadow-sm border border-gray-300"
     >
       {/* Título */}
       <Link to="/" className="text-xl font-bold tracking-wide text-gray-900">

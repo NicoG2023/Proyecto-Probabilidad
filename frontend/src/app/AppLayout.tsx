@@ -2,6 +2,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo } from 'react';
 import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import { useAuthStrict } from '../auth/AuthContext';
 
 export default function AppLayout() {
@@ -9,13 +10,11 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ¿Es admin?
   const isAdmin = useMemo(
     () => authenticated && hasRealmRole('admin'),
     [authenticated, hasRealmRole]
   );
 
-  // Si inicia sesión y es admin, redirigir a /admin (si no viene de allí)
   useEffect(() => {
     if (!authenticated || !isAdmin) return;
     const noRedirect = ['/admin', '/users-management'];
@@ -26,14 +25,17 @@ export default function AppLayout() {
   }, [authenticated, isAdmin, location.pathname, location.state, navigate]);
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      {/* Navbar visible siempre (autenticado o no) */}
+    <div className="min-h-screen bg-white text-black flex flex-col">
+      {/* Navbar */}
       <NavBar />
 
-      {/* Contenido principal */}
-      <main className="mx-auto max-w-7xl px-6 py-6">
+      {/* Contenido */}
+      <main className="flex-1 mx-auto max-w-7xl px-6 py-6">
         <Outlet />
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

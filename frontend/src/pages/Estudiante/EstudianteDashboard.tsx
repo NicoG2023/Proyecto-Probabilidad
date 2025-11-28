@@ -20,9 +20,9 @@ export default function EstudianteDashboard() {
   const [starting, setStarting] = useState<Corte | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Carga estadísticas
+  // Cargar estadísticas
   useEffect(() => {
-    if (!ready || !authenticated) return;  // ⬅️ clave
+    if (!ready || !authenticated) return;
     let mounted = true;
     (async () => {
       try {
@@ -35,12 +35,14 @@ export default function EstudianteDashboard() {
         mounted && setLoadingStats(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [ready, authenticated]);
 
-  // Carga últimos intentos
+  // Cargar intentos
   useEffect(() => {
-    if (!ready || !authenticated) return;  // ⬅️ clave
+    if (!ready || !authenticated) return;
     let mounted = true;
     (async () => {
       try {
@@ -53,10 +55,12 @@ export default function EstudianteDashboard() {
         mounted && setLoadingHist(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [ready, authenticated]);
 
-  // Normaliza promedios de C3 cuando vienen C3A/C3B
+  // Normalizar promedios
   const promedios = useMemo(() => {
     const base = stats?.promedioPorCorte ?? {};
     const C1 = getNumberOrNull(base["C1"]);
@@ -71,6 +75,7 @@ export default function EstudianteDashboard() {
     return { C1, C2, C3 };
   }, [stats]);
 
+  // Empezar quiz
   const handleStartQuiz = async (corte: Corte) => {
     try {
       setStarting(corte);
@@ -80,8 +85,7 @@ export default function EstudianteDashboard() {
     } catch (e: any) {
       console.error(e);
       setError(
-        e?.message ??
-          "No se pudo iniciar el intento. Intenta de nuevo."
+        e?.message ?? "No se pudo iniciar el intento. Intenta de nuevo."
       );
     } finally {
       setStarting(null);
@@ -89,454 +93,181 @@ export default function EstudianteDashboard() {
   };
 
   return (
-    <section className="min-h-screen bg-white text-gray-900">
-  <div className="mx-auto max-w-6xl px-4 py-10">
-    {/* Encabezado */}
-    <header className="mb-8 flex items-center justify-between">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Panel del Estudiante
-      </h1>
+    <section className="min-h-screen bg-[#FFFFFF] text-[#1F2937]">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        {/* Encabezado */}
+        <header className="mb-8 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Panel del Estudiante
+          </h1>
 
-      <span className="rounded-full bg-gray-200 px-3 py-1 text-sm text-gray-700">
-        Quices · C1 · C2 · C3
-      </span>
-    </header>
+          <span className="rounded-full border border-[#E5E7EB] bg-[#DBEAFE] px-3 py-1 text-sm text-[#1F2937]">
+            Quices · C1 · C2 · C3
+          </span>
+        </header>
 
-    {/* Acciones: Tomar Quiz */}
-    <div className="grid gap-6 md:grid-cols-3">
-      <ActionCard
-        title="Tomar Quiz - Corte 1"
-        subtitle="Primer corte (C1)"
-        accent="blue"
-        loading={starting === "C1"}
-        onClick={() => handleStartQuiz("C1")}
-      />
-      <ActionCard
-        title="Tomar Quiz - Corte 2"
-        subtitle="Segundo corte (C2)"
-        accent="amber"
-        loading={starting === "C2"}
-        onClick={() => handleStartQuiz("C2")}
-      />
-      <ActionCard
-        title="Tomar Quiz - Corte 3"
-        subtitle="Tercer corte (C3)"
-        accent="slate"
-        loading={starting === "C3"}
-        onClick={() => handleStartQuiz("C3")}
-      />
-    </div>
+        {/* Tarjetas para iniciar quices */}
+        <div className="grid gap-6 md:grid-cols-3">
+          <ActionCard
+            title="Tomar Quiz - Corte 1"
+            subtitle="Primer corte (C1)"
+            accent="blue"
+            loading={starting === "C1"}
+            onClick={() => handleStartQuiz("C1")}
+          />
+          <ActionCard
+            title="Tomar Quiz - Corte 2"
+            subtitle="Segundo corte (C2)"
+            accent="blue"
+            loading={starting === "C2"}
+            onClick={() => handleStartQuiz("C2")}
+          />
+          <ActionCard
+            title="Tomar Quiz - Corte 3"
+            subtitle="Tercer corte (C3)"
+            accent="blue"
+            loading={starting === "C3"}
+            onClick={() => handleStartQuiz("C3")}
+          />
+        </div>
 
-    {/* Error global */}
-    {error && (
-      <div className="mt-6 rounded-lg border border-amber-500/40 bg-amber-100 p-4 text-amber-800">
-        {error}
-      </div>
-    )}
-
-    {/* Estadísticas */}
-    <section className="mt-10">
-      <h2 className="mb-4 text-lg font-medium text-gray-700">
-        Mis estadísticas
-      </h2>
-
-      {/* KPIs */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <KpiCard
-          label="Intentos presentados"
-          value={loadingStats ? "…" : stats?.intentos ?? 0}
-        />
-        <KpiCard
-          label="Promedio global"
-          value={
-            loadingStats ? "…" : formatMaybeNumber(stats?.promedio, 2, "%")
-          }
-        />
-        <KpiCard
-          label="Promedio C1"
-          value={
-            loadingStats ? "…" : formatMaybeNumber(promedios.C1, 2, "%")
-          }
-        />
-        <KpiCard
-          label="Promedio C2"
-          value={
-            loadingStats ? "…" : formatMaybeNumber(promedios.C2, 2, "%")
-          }
-        />
-      </div>
-
-      {/* Última tarjeta C3 */}
-      <div className="mt-6 grid gap-6 md:grid-cols-1">
-        <KpiCard
-          label="Promedio C3"
-          value={
-            loadingStats ? "…" : formatMaybeNumber(promedios.C3, 2, "%")
-          }
-        />
-      </div>
-
-      {/* Últimos intentos */}
-      <div className="mt-8 rounded-xl border border-gray-300 bg-gray-50 p-4 shadow-sm">
-        <h3 className="mb-3 text-base font-medium text-gray-700">
-          Últimos intentos
-        </h3>
-
-        {loadingHist ? (
-          <SkeletonTable />
-        ) : historial.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <table className="w-full table-auto border-collapse text-sm">
-            <thead>
-              <tr className="text-left text-gray-600">
-                <th className="border-b border-gray-300 px-2 py-2">ID</th>
-                <th className="border-b border-gray-300 px-2 py-2">Corte</th>
-                <th className="border-b border-gray-300 px-2 py-2">Nota</th>
-                <th className="border-b border-gray-300 px-2 py-2">Estado</th>
-                <th className="border-b border-gray-300 px-2 py-2">Fecha</th>
-                <th className="border-b border-gray-300 px-2 py-2 text-right">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {historial.map((it) => (
-                <tr
-                  key={it.id}
-                  className="hover:bg-gray-100 transition-colors"
-                >
-                  <td className="border-b border-gray-300 px-2 py-2">{it.id}</td>
-                  <td className="border-b border-gray-300 px-2 py-2">{it?.quiz?.corte ?? "—"}</td>
-                  <td className="border-b border-gray-300 px-2 py-2">{formatMaybeNumber(it?.score, 2, "%")}</td>
-
-                  {/* Estado */}
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    <StudentStatusPill status={it.status} />
-                  </td>
-
-                  {/* Fecha */}
-                  <td className="border-b border-gray-300 px-2 py-2">
-                    {it.submittedAt
-                      ? new Date(it.submittedAt).toLocaleString()
-                      : it.startedAt
-                      ? new Date(it.startedAt).toLocaleString()
-                      : "—"}
-                  </td>
-
-                  {/* Acciones */}
-                  <td className="border-b border-gray-300 px-2 py-2 text-right">
-                    {it.status && it.status !== "PRESENTADO" ? (
-                      <button
-                        onClick={() => navigate(`/estudiante/quices/${it.id}`)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition"
-                      >
-                        {it.status === "EN_PROGRESO" ? "Continuar" : "Retomar"}
-                      </button>
-                    ) : (
-                      <span className="text-[11px] text-gray-500">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Error global */}
+        {error && (
+          <div className="mt-6 rounded-lg border border-[#FBBF24] bg-[#FFFBEB] p-4 text-[#92400E] shadow-sm">
+            {error}
+          </div>
         )}
+
+        {/* Estadísticas */}
+        <section className="mt-10">
+          <h2 className="mb-4 text-lg font-medium text-[#1F2937]">
+            Mis estadísticas
+          </h2>
+
+          <div className="grid gap-6 md:grid-cols-4">
+            <KpiCard
+              label="Intentos presentados"
+              value={loadingStats ? "…" : stats?.intentos ?? 0}
+            />
+            <KpiCard
+              label="Promedio global"
+              value={
+                loadingStats ? "…" : formatMaybeNumber(stats?.promedio, 2, "%")
+              }
+            />
+            <KpiCard
+              label="Promedio C1"
+              value={
+                loadingStats ? "…" : formatMaybeNumber(promedios.C1, 2, "%")
+              }
+            />
+            <KpiCard
+              label="Promedio C2"
+              value={
+                loadingStats ? "…" : formatMaybeNumber(promedios.C2, 2, "%")
+              }
+            />
+          </div>
+
+          <div className="mt-6 grid gap-6 md:grid-cols-1">
+            <KpiCard
+              label="Promedio C3"
+              value={
+                loadingStats ? "…" : formatMaybeNumber(promedios.C3, 2, "%")
+              }
+            />
+          </div>
+
+          {/* Últimos intentos */}
+          <div className="mt-8 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] p-4 shadow-sm">
+            <h3 className="mb-3 text-base font-medium text-[#1F2937]">
+              Últimos intentos
+            </h3>
+
+            {loadingHist ? (
+              <SkeletonTable />
+            ) : historial.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <table className="w-full table-auto border-collapse text-sm bg-[#FFFFFF] rounded-lg overflow-hidden">
+                <thead>
+                  <tr className="text-left bg-[#85B8FC] text-[#1F2937]">
+                    <th className="border-b border-[#E5E7EB] px-2 py-2">ID</th>
+                    <th className="border-b border-[#E5E7EB] px-2 py-2">
+                      Corte
+                    </th>
+                    <th className="border-b border-[#E5E7EB] px-2 py-2">
+                      Nota
+                    </th>
+                    <th className="border-b border-[#E5E7EB] px-2 py-2">
+                      Estado
+                    </th>
+                    <th className="border-b border-[#E5E7EB] px-2 py-2">
+                      Fecha
+                    </th>
+                    <th className="border-b border-[#E5E7EB] px-2 py-2 text-right">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {historial.map((it) => (
+                    <tr
+                      key={it.id}
+                      className="transition-colors hover:bg-[#F9FAFB]"
+                    >
+                      <td className="border-b border-[#E5E7EB] px-2 py-2">
+                        {it.id}
+                      </td>
+                      <td className="border-b border-[#E5E7EB] px-2 py-2">
+                        {it?.quiz?.corte ?? "—"}
+                      </td>
+                      <td className="border-b border-[#E5E7EB] px-2 py-2">
+                        {formatMaybeNumber(it?.score, 2, "%")}
+                      </td>
+
+                      <td className="border-b border-[#E5E7EB] px-2 py-2">
+                        <StudentStatusPill status={it.status} />
+                      </td>
+
+                      <td className="border-b border-[#E5E7EB] px-2 py-2">
+                        {it.submittedAt
+                          ? new Date(it.submittedAt).toLocaleString()
+                          : it.startedAt
+                          ? new Date(it.startedAt).toLocaleString()
+                          : "—"}
+                      </td>
+
+                      <td className="border-b border-[#E5E7EB] px-2 py-2 text-right">
+                        {it.status && it.status !== "PRESENTADO" ? (
+                          <button
+                            onClick={() =>
+                              navigate(`/estudiante/quices/${it.id}`)
+                            }
+                            className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#3B82F6] px-3 py-1.5 text-xs font-medium text-white transition hover:from-[#3B82F6] hover:to-[#60A5FA]"
+                          >
+                            {it.status === "EN_PROGRESO"
+                              ? "Continuar"
+                              : "Retomar"}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-[#6B7280]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
       </div>
     </section>
-  </div>
-</section>
-
-    // <section className="min-h-screen bg-gray-950 text-gray-100">
-    //   <div className="mx-auto max-w-6xl px-4 py-10">
-    //     {/* Encabezado */}
-    //     <header className="mb-8 flex items-center justify-between">
-    //       <h1 className="text-2xl font-semibold tracking-tight">
-    //         Panel del Estudiante
-    //       </h1>
-    //       <span className="rounded-full bg-amber-500/20 px-3 py-1 text-sm text-amber-300">
-    //         Quices · C1 · C2 · C3
-    //       </span>
-    //     </header>
-
-    //     {/* Acciones: Tomar Quiz */}
-    //     <div className="grid gap-6 md:grid-cols-3">
-    //       <ActionCard
-    //         title="Tomar Quiz - Corte 1"
-    //         subtitle="Primer corte (C1)"
-    //         accent="blue"
-    //         loading={starting === "C1"}
-    //         onClick={() => handleStartQuiz("C1")}
-    //       />
-    //       <ActionCard
-    //         title="Tomar Quiz - Corte 2"
-    //         subtitle="Segundo corte (C2)"
-    //         accent="amber"
-    //         loading={starting === "C2"}
-    //         onClick={() => handleStartQuiz("C2")}
-    //       />
-    //       <ActionCard
-    //         title="Tomar Quiz - Corte 3"
-    //         subtitle="Tercer corte (C3)"
-    //         accent="slate"
-    //         loading={starting === "C3"}
-    //         onClick={() => handleStartQuiz("C3")}
-    //       />
-    //     </div>
-
-    //     {/* Error global */}
-    //     {error && (
-    //       <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-amber-300">
-    //         {error}
-    //       </div>
-    //     )}
-
-    //     {/* Estadísticas */}
-    //     <section className="mt-10">
-    //       <h2 className="mb-4 text-lg font-medium text-gray-200">
-    //         Mis estadísticas
-    //       </h2>
-
-    //       <div className="grid gap-6 md:grid-cols-4">
-    //         <KpiCard
-    //           label="Intentos presentados"
-    //           value={loadingStats ? "…" : stats?.intentos ?? 0}
-    //         />
-    //         <KpiCard
-    //           label="Promedio global"
-    //           value={
-    //             loadingStats ? "…" : formatMaybeNumber(stats?.promedio, 2, "%")
-    //           }
-    //         />
-    //         <KpiCard
-    //           label="Promedio C1"
-    //           value={
-    //             loadingStats ? "…" : formatMaybeNumber(promedios.C1, 2, "%")
-    //           }
-    //         />
-    //         <KpiCard
-    //           label="Promedio C2"
-    //           value={
-    //             loadingStats ? "…" : formatMaybeNumber(promedios.C2, 2, "%")
-    //           }
-    //         />
-    //       </div>
-
-    //       <div className="mt-6 grid gap-6 md:grid-cols-1">
-    //         <KpiCard
-    //           label="Promedio C3"
-    //           value={
-    //             loadingStats ? "…" : formatMaybeNumber(promedios.C3, 2, "%")
-    //           }
-    //         />
-    //       </div>
-
-    //       {/* Últimos intentos */}
-    //       <div className="mt-8 rounded-xl border border-gray-800 bg-gray-900/50 p-4">
-    //         <h3 className="mb-3 text-base font-medium text-gray-200">
-    //           Últimos intentos
-    //         </h3>
-
-    //         {loadingHist ? (
-    //           <SkeletonTable />
-    //         ) : historial.length === 0 ? (
-    //           <EmptyState />
-    //         ) : (
-    //           <table className="w-full table-auto border-collapse text-sm">
-    //             <thead>
-    //               <tr className="text-left text-gray-400">
-    //                 <th className="border-b border-gray-800 px-2 py-2">ID</th>
-    //                 <th className="border-b border-gray-800 px-2 py-2">Corte</th>
-    //                 <th className="border-b border-gray-800 px-2 py-2">Nota</th>
-    //                 <th className="border-b border-gray-800 px-2 py-2">Estado</th>
-    //                 <th className="border-b border-gray-800 px-2 py-2">Fecha</th>
-    //                 <th className="border-b border-gray-800 px-2 py-2 text-right">
-    //                   Acciones
-    //                 </th>
-    //               </tr>
-    //             </thead>
-    //             <tbody>
-    //               {historial.map((it) => (
-    //                 <tr key={it.id} className="hover:bg-gray-800/40">
-    //                   <td className="border-b border-gray-800 px-2 py-2">
-    //                     {it.id}
-    //                   </td>
-    //                   <td className="border-b border-gray-800 px-2 py-2">
-    //                     {it?.quiz?.corte ?? "—"}
-    //                   </td>
-    //                   <td className="border-b border-gray-800 px-2 py-2">
-    //                     {formatMaybeNumber(it?.score, 2, "%")}
-    //                   </td>
-
-    //                   {/* ESTADO */}
-    //                   <td className="border-b border-gray-800 px-2 py-2">
-    //                     <StudentStatusPill status={it.status} />
-    //                   </td>
-
-    //                   {/* FECHA */}
-    //                   <td className="border-b border-gray-800 px-2 py-2">
-    //                     {it.submittedAt
-    //                       ? new Date(it.submittedAt).toLocaleString()
-    //                       : it.startedAt
-    //                       ? new Date(it.startedAt).toLocaleString()
-    //                       : "—"}
-    //                   </td>
-
-    //                   {/* ACCIONES */}
-    //                   <td className="border-b border-gray-800 px-2 py-2 text-right">
-    //                     {it.status && it.status !== "PRESENTADO" ? (
-    //                       <button
-    //                         onClick={() => navigate(`/estudiante/quices/${it.id}`)}
-    //                         className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-3 py-1.5 text-xs font-medium text-white hover:opacity-95"
-    //                       >
-    //                         {it.status === "EN_PROGRESO" ? "Continuar" : "Retomar"}
-    //                       </button>
-    //                     ) : (
-    //                       <span className="text-[11px] text-gray-500">—</span>
-    //                     )}
-    //                   </td>
-    //                 </tr>
-    //               ))}
-    //             </tbody>
-    //           </table>
-    //         )}
-    //       </div>
-    //     </section>
-    //   </div>
-    // </section>
   );
 }
 
 /* ============ UI Components ============ */
-
-// function ActionCard(props: {
-//   title: string;
-//   subtitle?: string;
-//   accent: "blue" | "amber" | "slate";
-//   loading?: boolean;
-//   onClick: () => void;
-// }) {
-//   const accentClasses =
-//     props.accent === "blue"
-//       ? "from-blue-600 to-blue-500"
-//       : props.accent === "amber"
-//       ? "from-amber-600 to-amber-500"
-//       : "from-slate-600 to-slate-500";
-
-//   return (
-//     <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
-//       <div
-//         className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-30 blur-lg`}
-//       />
-//       <h3 className="mb-1 text-base font-semibold text-gray-100">
-//         {props.title}
-//       </h3>
-//       {props.subtitle && (
-//         <p className="mb-4 text-sm text-gray-400">{props.subtitle}</p>
-//       )}
-//       <button
-//         onClick={props.onClick}
-//         disabled={props.loading}
-//         className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-amber-500 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-//       >
-//         {props.loading ? (
-//           <>
-//             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-//             Iniciando…
-//           </>
-//         ) : (
-//           <>Comenzar</>
-//         )}
-//       </button>
-//     </div>
-//   );
-// }
-
-// function KpiCard(props: { label: string; value: string | number | null | undefined }) {
-//   return (
-//     <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
-//       <div className="text-xs uppercase tracking-wide text-gray-400">
-//         {props.label}
-//       </div>
-//       <div className="mt-2 text-2xl font-semibold text-gray-100">
-//         {props.value ?? "—"}
-//       </div>
-//     </div>
-//   );
-// }
-
-// function SkeletonTable() {
-//   return (
-//     <div className="space-y-2">
-//       {Array.from({ length: 4 }).map((_, i) => (
-//         <div key={i} className="h-9 animate-pulse rounded-md bg-gray-800/50" />
-//       ))}
-//     </div>
-//   );
-// }
-
-// function EmptyState() {
-//   return (
-//     <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-4">
-//       <div>
-//         <p className="text-sm text-gray-300">
-//           Aún no hay estadísticas para mostrar.
-//         </p>
-//         <p className="text-xs text-gray-500">
-//           Realiza tu primer intento para ver promedios y tu historial.
-//         </p>
-//       </div>
-//       <div className="hidden rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-300 md:block">
-//         Tip: empieza por C1
-//       </div>
-//     </div>
-//   );
-// }
-
-
-// function ActionCard(props: {
-//   title: string;
-//   subtitle?: string;
-//   accent: "blue" | "amber" | "slate";
-//   loading?: boolean;
-//   onClick: () => void;
-// }) {
-//   const accentClasses =
-//     props.accent === "blue"
-//       ? "from-blue-600 to-blue-500"
-//       : props.accent === "amber"
-//       ? "from-amber-600 to-amber-500"
-//       : "from-slate-600 to-slate-500";
-
-//   return (
-//     <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/60 p-5 shadow-sm">
-//       <div
-//         className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-30 blur-lg`}
-//       />
-//       <h3 className="mb-1 text-base font-semibold text-gray-100">
-//         {props.title}
-//       </h3>
-//       {props.subtitle && (
-//         <p className="mb-4 text-sm text-gray-400">{props.subtitle}</p>
-//       )}
-//       <button
-//         onClick={props.onClick}
-//         disabled={props.loading}
-//         className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-amber-500 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-//       >
-//         {props.loading ? (
-//           <>
-//             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-//             Iniciando…
-//           </>
-//         ) : (
-//           <>Comenzar</>
-//         )}
-//       </button>
-//     </div>
-//   );
-// }
 
 function ActionCard(props: {
   title: string;
@@ -545,34 +276,33 @@ function ActionCard(props: {
   loading?: boolean;
   onClick: () => void;
 }) {
+  // Para la burbuja decorativa usamos el primario/secundario
   const accentClasses =
     props.accent === "blue"
-      ? "from-blue-400 to-blue-300"
+      ? "from-[#60A5FA] to-[#3B82F6]"
       : props.accent === "amber"
-      ? "from-amber-400 to-amber-300"
-      : "from-slate-400 to-slate-300";
+      ? "from-[#60A5FA] to-[#3B82F6]"
+      : "from-[#60A5FA] to-[#3B82F6]";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
-      {/* Accent bubble */}
+    <div className="relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#DBEAFE] p-5 shadow-sm">
+      {/* Bubble de color */}
       <div
-        className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-25 blur-xl`}
+        className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-40 blur-xl`}
       />
 
-      {/* Title */}
-      <h3 className="mb-1 text-base font-semibold text-gray-900">
+      <h3 className="mb-1 text-base font-semibold text-[#1F2937]">
         {props.title}
       </h3>
 
       {props.subtitle && (
-        <p className="mb-4 text-sm text-gray-600">{props.subtitle}</p>
+        <p className="mb-4 text-sm text-[#6B7280]">{props.subtitle}</p>
       )}
 
-      {/* Button */}
       <button
         onClick={props.onClick}
         disabled={props.loading}
-        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-amber-400 px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#3B82F6] px-4 py-2 text-sm font-medium text-white hover:from-[#3B82F6] hover:to-[#60A5FA] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {props.loading ? (
           <>
@@ -587,96 +317,48 @@ function ActionCard(props: {
   );
 }
 
-
-// function KpiCard(props: { label: string; value: string | number | null | undefined }) {
-//   return (
-//     <div className="rounded-2xl border border-gray-800 bg-gray-900/60 p-5">
-//       <div className="text-xs uppercase tracking-wide text-gray-400">
-//         {props.label}
-//       </div>
-//       <div className="mt-2 text-2xl font-semibold text-gray-100">
-//         {props.value ?? "—"}
-//       </div>
-//     </div>
-//   );
-// }
-
-// function KpiCard(props: { label: string; value: string | number | null | undefined }) {
-//   return (
-//     <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
-//       <div className="text-xs uppercase tracking-wide text-gray-600">
-//         {props.label}
-//       </div>
-//       <div className="mt-2 text-2xl font-semibold text-gray-900">
-//         {props.value ?? "—"}
-//       </div>
-//     </div>
-//   );
-// }
-function KpiCard(props: { label: string; value: string | number | null | undefined }) {
+function KpiCard(props: {
+  label: string;
+  value: string | number | null | undefined;
+}) {
   return (
-    <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
-      <div className="text-xs uppercase tracking-wide text-gray-600">
+    <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-5 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-[#6B7280]">
         {props.label}
       </div>
-      <div className="mt-2 text-2xl font-semibold text-gray-900">
+      <div className="mt-2 text-2xl font-semibold text-[#1F2937]">
         {props.value ?? "—"}
       </div>
     </div>
   );
 }
 
-
-// function SkeletonTable() {
-//   return (
-//     <div className="space-y-2">
-//       {Array.from({ length: 4 }).map((_, i) => (
-//         <div key={i} className="h-9 animate-pulse rounded-md bg-gray-800/50" />
-//       ))}
-//     </div>
-//   );
-// }
-
 function SkeletonTable() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="h-9 animate-pulse rounded-md bg-gray-200" />
+        <div
+          key={i}
+          className="h-9 animate-pulse rounded-md bg-[#85B8FC]"
+        />
       ))}
     </div>
   );
 }
 
-
-// function EmptyState() {
-//   return (
-//     <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-800 bg-gray-900/30 p-4">
-//       <div>
-//         <p className="text-sm text-gray-300">
-//           Aún no hay estadísticas para mostrar.
-//         </p>
-//         <p className="text-xs text-gray-500">
-//           Realiza tu primer intento para ver promedios y tu historial.
-//         </p>
-//       </div>
-//       <div className="hidden rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-300 md:block">
-//         Tip: empieza por C1
-//       </div>
-//     </div>
-//   );
-// }
-
 function EmptyState() {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
+    <div className="flex items-center justify-between rounded-xl border border-dashed border-[#E5E7EB] bg-[#DBEAFE] p-4">
       <div>
-        <p className="text-sm text-gray-800">Aún no hay estadísticas para mostrar.</p>
-        <p className="text-xs text-gray-600">
+        <p className="text-sm text-[#1F2937]">
+          Aún no hay estadísticas para mostrar.
+        </p>
+        <p className="text-xs text-[#6B7280]">
           Realiza tu primer intento para ver promedios y tu historial.
         </p>
       </div>
 
-      <div className="hidden rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-700 md:block">
+      <div className="hidden rounded-full bg-[#F9FAFB] px-3 py-1 text-xs text-[#1F2937] md:block">
         Tip: empieza por C1
       </div>
     </div>
@@ -689,9 +371,11 @@ function average(nums: number[]) {
   if (!nums.length) return null;
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
+
 function getNumberOrNull(x: unknown): number | null {
   return typeof x === "number" && !Number.isNaN(x) ? x : null;
 }
+
 function formatMaybeNumber(
   x: number | null | undefined,
   decimals = 2,
@@ -702,31 +386,6 @@ function formatMaybeNumber(
   return `${v.toFixed(decimals)}${suffix ?? ""}`;
 }
 
-// function StudentStatusPill(props: { status?: string | null }) {
-//   const status = props.status ?? "DESCONOCIDO";
-//   let label = status;
-//   let classes =
-//     "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium";
-
-//   if (status === "PRESENTADO") {
-//     label = "Presentado";
-//     classes +=
-//       " bg-emerald-500/15 text-emerald-300 border border-emerald-500/40";
-//   } else if (status === "EN_PROGRESO") {
-//     label = "En progreso";
-//     classes +=
-//       " bg-amber-500/15 text-amber-300 border border-amber-500/40";
-//   } else if (status === "CANCELADO") {
-//     label = "Cancelado";
-//     classes += " bg-red-500/15 text-red-300 border border-red-500/40";
-//   } else {
-//     label = status;
-//     classes += " bg-gray-700 text-gray-200";
-//   }
-
-//   return <span className={classes}>{label}</span>;
-// }
-
 function StudentStatusPill(props: { status?: string | null }) {
   const status = props.status ?? "DESCONOCIDO";
   let label = status;
@@ -735,23 +394,17 @@ function StudentStatusPill(props: { status?: string | null }) {
 
   if (status === "PRESENTADO") {
     label = "Presentado";
-    classes +=
-      " bg-emerald-100 text-emerald-700 border-emerald-300";
+    classes += " bg-emerald-50 text-emerald-700 border-emerald-200";
   } else if (status === "EN_PROGRESO") {
     label = "En progreso";
-    classes +=
-      " bg-amber-100 text-amber-700 border-amber-300";
+    classes += " bg-amber-50 text-amber-800 border-amber-200";
   } else if (status === "CANCELADO") {
     label = "Cancelado";
-    classes +=
-      " bg-red-100 text-red-700 border-red-300";
+    classes += " bg-red-50 text-red-700 border-red-200";
   } else {
     label = status;
-    classes +=
-      " bg-gray-100 text-gray-700 border-gray-300";
+    classes += " bg-[#F9FAFB] text-[#6B7280] border-[#E5E7EB]";
   }
 
   return <span className={classes}>{label}</span>;
 }
-
-

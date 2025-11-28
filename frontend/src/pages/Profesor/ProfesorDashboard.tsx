@@ -402,7 +402,7 @@ export default function ProfesorDashboard() {
           <div className="max-h-[420px] overflow-auto rounded-xl border border-gray-300 bg-gray-50">
             <table className="w-full table-auto border-collapse text-sm">
               <thead>
-                <tr className="bg-gray-200 text-left text-xs uppercase tracking-wide text-gray-600">
+                <tr className="bg-[#85B8FC] text-left text-xs uppercase tracking-wide text-gray-600">
                   <th className="border-b border-gray-300 px-3 py-2">Alumno</th>
                   <th className="border-b border-gray-300 px-3 py-2">Intentos</th>
                   <th className="border-b border-gray-300 px-3 py-2">Promedio</th>
@@ -624,7 +624,7 @@ function AttemptsModal(props: {
         <div className="max-h-[420px] overflow-auto rounded-lg border border-gray-300 bg-gray-50">
           <table className="w-full table-auto border-collapse text-sm">
             <thead>
-              <tr className="bg-gray-100 text-left text-xs uppercase tracking-wide text-gray-700">
+              <tr className="bg-[#85B8FC] text-left text-xs uppercase tracking-wide text-gray-700">
                 <th className="border-b border-gray-300 px-3 py-2">Quiz</th>
                 <th className="border-b border-gray-300 px-3 py-2">Corte</th>
                 <th className="border-b border-gray-300 px-3 py-2">Nota</th>
