@@ -1,6 +1,10 @@
 // src/pages/EstudianteDashboard.tsx
 import { useEffect, useMemo, useState } from "react";
 import { EstudianteAPI as API } from "../../api/estudianteApi";
+import {
+  PRACTICE_TEMPLATES,
+  type PracticeCorte,
+} from "../../constants/practiceTemplates";
 import type {
   Corte,
   IntentoCreadoDTO,
@@ -75,7 +79,7 @@ export default function EstudianteDashboard() {
     return { C1, C2, C3 };
   }, [stats]);
 
-  // Empezar quiz
+  // Empezar quiz (modo examen)
   const handleStartQuiz = async (corte: Corte) => {
     try {
       setStarting(corte);
@@ -92,6 +96,16 @@ export default function EstudianteDashboard() {
     }
   };
 
+  // Ir a práctica por corte (C1, C2, C3A, C3B)
+  const handlePractice = (corte: PracticeCorte) => {
+    const templates = PRACTICE_TEMPLATES[corte];
+    if (!templates || templates.length === 0) {
+      alert("Aún no hay preguntas de práctica configuradas para este corte.");
+      return;
+    }
+    navigate(`/estudiante/practica/${corte}`);
+  };
+
   return (
     <section className="min-h-screen bg-[#FFFFFF] text-[#1F2937]">
       <div className="mx-auto max-w-6xl px-4 py-10">
@@ -106,7 +120,7 @@ export default function EstudianteDashboard() {
           </span>
         </header>
 
-        {/* Tarjetas para iniciar quices */}
+        {/* Tarjetas para iniciar quices (modo examen) */}
         <div className="grid gap-6 md:grid-cols-3">
           <ActionCard
             title="Tomar Quiz - Corte 1"
@@ -130,6 +144,45 @@ export default function EstudianteDashboard() {
             onClick={() => handleStartQuiz("C3")}
           />
         </div>
+
+        {/* ================== NUEVA SECCIÓN: MODO PRÁCTICA ================== */}
+        <section className="mt-8">
+          <h2 className="mb-2 text-lg font-medium text-[#1F2937]">
+            Practicar por corte
+          </h2>
+          <p className="mb-4 text-sm text-[#6B7280]">
+            En cada corte podrás practicar con todas las preguntas de ese
+            contenido. Ajusta los parámetros, responde y revisa la explicación
+            paso a paso.
+          </p>
+
+          <div className="grid gap-6 md:grid-cols-4">
+            <PracticeCard
+              corteLabel="Corte 1"
+              title="Práctica C1"
+              subtitle="Multinomial, intervalos, normal, etc."
+              onClick={() => handlePractice("C1")}
+            />
+            <PracticeCard
+              corteLabel="Corte 2"
+              title="Práctica C2"
+              subtitle="Binomial→normal, Exponencial, Weibull…"
+              onClick={() => handlePractice("C2")}
+            />
+            <PracticeCard
+              corteLabel="Corte 3A"
+              title="Práctica C3A"
+              subtitle="Normal tolerancias, hipergeométrica…"
+              onClick={() => handlePractice("C3A")}
+            />
+            <PracticeCard
+              corteLabel="Corte 3B"
+              title="Práctica C3B"
+              subtitle="Normal intervalo, transformaciones, etc."
+              onClick={() => handlePractice("C3B")}
+            />
+          </div>
+        </section>
 
         {/* Error global */}
         {error && (
@@ -276,7 +329,6 @@ function ActionCard(props: {
   loading?: boolean;
   onClick: () => void;
 }) {
-  // Para la burbuja decorativa usamos el primario/secundario
   const accentClasses =
     props.accent === "blue"
       ? "from-[#60A5FA] to-[#3B82F6]"
@@ -286,7 +338,6 @@ function ActionCard(props: {
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#DBEAFE] p-5 shadow-sm">
-      {/* Bubble de color */}
       <div
         className={`absolute right-[-30px] top-[-30px] h-28 w-28 rounded-full bg-gradient-to-br ${accentClasses} opacity-40 blur-xl`}
       />
@@ -317,6 +368,39 @@ function ActionCard(props: {
   );
 }
 
+/**
+ * Card para modo práctica: un solo botón por corte.
+ */
+function PracticeCard(props: {
+  corteLabel: string;
+  title: string;
+  subtitle?: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-5 shadow-sm">
+      <div className="mb-2 inline-flex items-center rounded-full bg-[#DBEAFE] px-2 py-0.5 text-[11px] font-medium text-[#1F2937]">
+        {props.corteLabel} · Modo práctica
+      </div>
+
+      <h3 className="mb-1 text-sm font-semibold text-[#1F2937]">
+        {props.title}
+      </h3>
+
+      {props.subtitle && (
+        <p className="mb-3 text-xs text-[#6B7280]">{props.subtitle}</p>
+      )}
+
+      <button
+        onClick={props.onClick}
+        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#60A5FA] to-[#3B82F6] px-3 py-1.5 text-xs font-medium text-white hover:from-[#3B82F6] hover:to-[#60A5FA]"
+      >
+        Practicar este corte
+      </button>
+    </div>
+  );
+}
+
 function KpiCard(props: {
   label: string;
   value: string | number | null | undefined;
@@ -337,10 +421,7 @@ function SkeletonTable() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-9 animate-pulse rounded-md bg-[#85B8FC]"
-        />
+        <div key={i} className="h-9 animate-pulse rounded-md bg-[#85B8FC]" />
       ))}
     </div>
   );

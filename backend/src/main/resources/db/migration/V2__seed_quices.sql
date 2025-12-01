@@ -63,15 +63,13 @@ P = C(J, x_jov)\, p_J^{x_jov} (1-p_J)^{J-x_jov}
     \cdot C(N, x_nino)\, p_N^{x_nino} (1-p_N)^{N-x_nino}.$$,
   'combinatoria_mixta',
   '{
-    "jovenes_tot": { "values": [3,4,5] },
-    "mayores_tot": { "values": [3,4,5] },
+    "jovenes_tot": { "min": 1, "max": 10 },
+    "mayores_tot": { "min": 1, "max": 10 },
+    "ninos_tot":   { "min": 1, "max": 10 },
 
-    "ninos_tot":   { "values": [2,3,4] },
-
-    "x_jov":       { "min": 1, "max": 3 },
-    "x_may":       { "min": 1, "max": 3 },
-
-    "x_nino":      { "min": 1, "max": 2 },
+    "x_jov":       { "min": 1, "max": 10 },
+    "x_may":       { "min": 1, "max": 10 },
+    "x_nino":      { "min": 1, "max": 10 },
 
     "p_jov":       { "values": [0.15, 0.20, 0.25] },
     "p_may":       { "values": [0.20, 0.25, 0.30] },
@@ -102,8 +100,6 @@ P = C(J, x_jov)\, p_J^{x_jov} (1-p_J)^{J-x_jov}
   }'::jsonb,
   'A', 1;
 
-
-
 -- P3: Serie 3 de 4 — MCQ AUTO + fracciones
 INSERT INTO question_templates
 (quiz_id, stem_md, explanation_md, family, param_schema, option_schema, correct_key, version)
@@ -114,9 +110,9 @@ SELECT
     P(B)= \binom{4}{3}(1-p_A)^3 p_A + \binom{4}{4}(1-p_A)^4.$$,
   'serie_mejor_4',
   '{
-    "gana":  { "values": [3] },
-    "total": { "values": [4] },
-    "pA":    { "values": [0.50, 0.55, 0.60, 0.65] }
+    "gana":  { "min": 1, "max": 10 },
+    "total": { "min": 1, "max": 10 },
+    "pA":    { "min": 0.50, "max": 0.80 }
   }'::jsonb,
   '{
     "mode": "mcq_auto",

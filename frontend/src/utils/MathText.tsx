@@ -6,9 +6,10 @@ function isLikelyMath(s?: string) {
   if (!s) return false;
 
   // Ya NO miramos '$' para evitar confundir precios
-  return /\\frac|\\sqrt|\\sum|\\int|\\cdot|\\times|\\begin\{|\\left|\\right|\\phi|\\Phi|\\lambda|\\mu|\\sigma/.test(
+  return /\\frac|\\sqrt|\\sum|\\int|\\cdot|\\times|\\binom|\\begin\{|\\left|\\right|\\phi|\\Phi|\\lambda|\\mu|\\sigma/.test(
     s
   );
+
 }
 
 /**

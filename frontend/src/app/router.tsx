@@ -1,6 +1,8 @@
+// src/router/AppRouter.tsx (o donde tengas este archivo)
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppLayout from "./AppLayout";
 import EstudianteQuizPage from "../pages/Estudiante/EstudianteQuizPage";
+import EstudiantePracticaQuizPage from "../pages/Estudiante/EstudiantePracticaQuizPage"; // ⬅️ NUEVO
 import AdminPage from "../pages/Admin/AdminPage";
 import ProfesorDashboard from "../pages/Profesor/ProfesorDashboard";
 import QuizPreviewPage from "../pages/QuizPreviewPage";
@@ -29,6 +31,16 @@ const router = createBrowserRouter([
           <RequireAuth>
             <RequireRole role="estudiante">
               <EstudianteQuizPage />
+            </RequireRole>
+          </RequireAuth>
+        ),
+      },
+      {
+        path: "estudiante/practica/:templateId", // ⬅️ NUEVO
+        element: (
+          <RequireAuth>
+            <RequireRole role="estudiante">
+              <EstudiantePracticaQuizPage />
             </RequireRole>
           </RequireAuth>
         ),

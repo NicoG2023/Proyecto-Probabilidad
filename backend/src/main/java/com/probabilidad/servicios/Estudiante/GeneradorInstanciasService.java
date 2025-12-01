@@ -93,7 +93,7 @@ public class GeneradorInstanciasService {
     /**
      * Reemplaza placeholders "{clave}", "{clave|percent[:d]}", "{clave|int}" usando Locale.US.
      */
-    private String interpolar(String txt, Map<String, Object> params) {
+    public String interpolar(String txt, Map<String, Object> params) {
         if (txt == null) return null;
         String out = txt;
 
@@ -596,6 +596,7 @@ public class GeneradorInstanciasService {
 
     // Renderiza un valor numérico según fmt/decimals/prefix/suffix
     // y soporta format = "fraction"
+    @SuppressWarnings("unused")
     private String renderOptionValue(
             double value,
             String fmt,
