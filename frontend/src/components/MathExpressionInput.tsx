@@ -1,7 +1,7 @@
 // src/components/MathExpressionInput.tsx
 import { useEffect, useRef } from "react";
 import type { MathfieldElement } from "mathlive";
-import "mathlive"; // registra <math-field> como custom element
+import "mathlive"; // registra <math-field>
 
 type Props = {
   value: string;
@@ -15,7 +15,7 @@ export function MathExpressionInput({ value, onChange, placeholder }: Props) {
   // Mantener el valor controlado desde React
   useEffect(() => {
     if (!fieldRef.current) return;
-    const current = fieldRef.current.getValue("latex");
+    const current = fieldRef.current.getValue("latex-unstyled");
     if (current !== value) {
       fieldRef.current.setValue(value ?? "", { format: "latex" });
     }
@@ -23,7 +23,8 @@ export function MathExpressionInput({ value, onChange, placeholder }: Props) {
 
   const handleInput = () => {
     if (!fieldRef.current) return;
-    const latex = fieldRef.current.getValue("latex");
+    // 🔹 LaTeX “limpio”, sin estilos
+    const latex = fieldRef.current.getValue("latex-unstyled");
     onChange(latex);
   };
 

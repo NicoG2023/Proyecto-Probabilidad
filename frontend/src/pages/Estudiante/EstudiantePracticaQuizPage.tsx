@@ -28,7 +28,7 @@ type QuestionState = {
   loading: boolean;
   error: string | null; // errores de red / validación
 
-  // ahora la respuesta es una expresión (LaTeX / infix)
+  // ahora la respuesta es una expresión (LaTeX / infix) o texto
   answer: string;
   checking: boolean;
   result: PracticeCheckResultDTO | null;
@@ -45,15 +45,47 @@ type SliderConfig = {
 
 const PARAM_SLIDER_CONFIG: Record<string, SliderConfig> = {
   // P1 – Multinomial contagios
-  p_covid: { min: 0.2, max: 0.35, step: 0.01, asPercent: true },
-  p_omicron: { min: 0.25, max: 0.4, step: 0.01, asPercent: true },
-  p_n1h1: { min: 0.3, max: 0.45, step: 0.01, asPercent: true },
-  x_covid: { min: 0, max: 5, step: 1 },
-  x_omicron: { min: 0, max: 5, step: 1 },
-  x_n1h1: { min: 0, max: 5, step: 1 },
+  p_covid: {
+    min: 0.2,
+    max: 0.35,
+    step: 0.01,
+    asPercent: true,
+    label: "Probabilidad de contagio de Covid-19",
+  },
+  p_omicron: {
+    min: 0.25,
+    max: 0.4,
+    step: 0.01,
+    asPercent: true,
+    label: "Probabilidad de contagio de Omicron",
+  },
+  p_n1h1: {
+    min: 0.3,
+    max: 0.45,
+    step: 0.01,
+    asPercent: true,
+    label: "Probabilidad de contagio de N1H1",
+  },
+  x_covid: {
+    min: 0,
+    max: 5,
+    step: 1,
+    label: "Cantidad de contagiados de Covid-19",
+  },
+  x_omicron: {
+    min: 0,
+    max: 5,
+    step: 1,
+    label: "Cantidad de contagiados de Omicron",
+  },
+  x_n1h1: {
+    min: 0,
+    max: 5,
+    step: 1,
+    label: "Cantidad de contagiados de N1H1",
+  },
 
   // P2 – Combinatoria por grupos
-  // TODOS entre 1 y 10 y con labels “Total de …” / “… contagiados”
   jovenes_tot: {
     min: 1,
     max: 10,
@@ -315,7 +347,7 @@ export default function EstudiantePracticaQuizPage() {
     void refreshQuestionWithParams(templateId, newParams);
   };
 
-  // Cambiar respuesta de UNA pregunta (expresión)
+  // Cambiar respuesta de UNA pregunta (expresión o texto)
   const handleAnswerChange = (templateId: number, value: string) => {
     setQuestions((prev) =>
       prev.map((q) =>
@@ -340,7 +372,7 @@ export default function EstudiantePracticaQuizPage() {
     }
 
     if (!current.answer || current.answer.trim() === "") {
-      alert("Por favor, escribe una expresión de respuesta.");
+      alert("Por favor, escribe tu respuesta.");
       return;
     }
 
@@ -427,6 +459,13 @@ export default function EstudiantePracticaQuizPage() {
               const visibleParamsEntries = Object.entries(q.params).filter(
                 ([key]) => !HIDDEN_PARAMS.has(key)
               );
+
+              // --- NUEVO: mirar metadata de respuesta para saber si es texto plano ---
+              const answerMeta = (q.question as any)?.answerMeta;
+              const isPlainTextAnswer =
+                answerMeta?.mode === "open_text" &&
+                (answerMeta?.format === "plain" ||
+                  answerMeta?.textFormat === "plain");
 
               return (
                 <article
@@ -535,7 +574,7 @@ export default function EstudiantePracticaQuizPage() {
                               </label>
                               <input
                                 type={isNumber ? "number" : "text"}
-                                className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
+                                className="rounded-lg border border-gray-300 bg.white px-2 py-1.5 text-xs text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
                                 value={value as any}
                                 onChange={(e) => {
                                   const raw = e.target.value;
@@ -556,17 +595,32 @@ export default function EstudiantePracticaQuizPage() {
                   {/* RESPUESTA DEL ESTUDIANTE */}
                   <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <h3 className="mb-3 text-xs font-semibold text-gray-700">
-                      Tu respuesta (expresión)
+                      Tu respuesta
+                      {isPlainTextAnswer ? "" : " (expresión)"}
                     </h3>
 
                     <div className="flex flex-col gap-3">
-                      <MathExpressionInput
-                        value={q.answer}
-                        onChange={(latex) =>
-                          handleAnswerChange(q.templateId, latex)
-                        }
-                        placeholder={String.raw`\frac{(1+3+1)!}{1!3!1!}(0.25)^1(0.35)^3(0.3)^1`}
-                      />
+                      {isPlainTextAnswer ? (
+                        // --- PREGUNTAS DE TEXTO PLANO (ej. "Ninguna de las anteriores") ---
+                        <input
+                          type="text"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
+                          placeholder="Escribe tu respuesta (por ejemplo: Ninguna de las anteriores, N/A, NA, …)"
+                          value={q.answer}
+                          onChange={(e) =>
+                            handleAnswerChange(q.templateId, e.target.value)
+                          }
+                        />
+                      ) : (
+                        // --- PREGUNTAS DE EXPRESIÓN MATEMÁTICA ---
+                        <MathExpressionInput
+                          value={q.answer}
+                          onChange={(latex) =>
+                            handleAnswerChange(q.templateId, latex)
+                          }
+                          placeholder={String.raw`\frac{(1+3+1)!}{1!3!1!}(0.25)^1(0.35)^3(0.3)^1`}
+                        />
+                      )}
 
                       <button
                         type="button"

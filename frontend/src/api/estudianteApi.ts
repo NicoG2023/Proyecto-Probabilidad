@@ -207,6 +207,7 @@ export const EstudianteAPI = {
     params: Record<string, any>,
     expression: string // expresión escrita por el estudiante (Latex / fórmula)
   ) => {
+    console.log("expresión enviada al backend: ", expression);
     const res = await http.post<PracticeCheckResultDTO>(`/practice/check`, {
       templateId,
       params,

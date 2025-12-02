@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Collections;
 
 import com.probabilidad.dto.PracticeAnswerMeta;
 import com.probabilidad.dto.PracticeCheckResultDto;
@@ -18,6 +19,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.NotFoundException;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class PracticaService {
@@ -27,6 +29,8 @@ public class PracticaService {
 
     @Inject
     GeneradorInstanciasService generador;
+
+    private static final Logger LOG = Logger.getLogger(PracticaService.class);
 
     // ===================== API PRINCIPAL =====================
 
@@ -189,10 +193,20 @@ public class PracticaService {
             return buildMultinomialLatexMeta(t, params);
         }
 
+        // Caso especial: P4 – Poisson (expresión con número)
+        if ("poisson_aprox".equalsIgnoreCase(t.family)) {
+            return buildPoissonLatexMeta(t, params);
+        }
+
         Map<String,Object> opt = t.optionSchema;
         if (opt == null) return null;
 
-        String mode = optString(opt, "mode", "mcq_auto");
+        // Si hay un modo especial para práctica, úsalo;
+        // si no, cae al "mode" original.
+        String practiceMode = optString(opt, "practice_mode", null);
+        String mode = (practiceMode != null)
+                ? practiceMode
+                : optString(opt, "mode", "mcq_auto");
 
         // ----- 1) MCQ numérico / fracción -----
         if ("mcq_auto".equalsIgnoreCase(mode) && opt.containsKey("correct_expr")) {
@@ -291,7 +305,9 @@ public class PracticaService {
             PracticeAnswerMeta meta = new PracticeAnswerMeta();
             meta.mode = "open_text";
 
-            String fmt = optString(opt,"format","plain");
+            // Usa practice_format si existe; si no, cae a format y luego a "plain"
+            String fmt = optString(opt, "practice_format", optString(opt,"format","plain"));
+
             meta.textFormat = fmt;
             meta.format = fmt; // reusamos "format"
 
@@ -343,6 +359,22 @@ public class PracticaService {
 
             return meta;
         }
+        // ----- 5) MCQ_KEY (opción correcta por clave A/B/C/...) -----
+        if ("mcq_key".equalsIgnoreCase(mode)) {
+
+            PracticeAnswerMeta meta = new PracticeAnswerMeta();
+            meta.mode = "mcq_key";
+
+            // Guardamos la clave correcta (p.ej. "D") en canonical
+            String correctKey = optString(opt, "practice_correct_key", null);
+            meta.canonical = correctKey;
+
+            // Lo que quieres mostrar como “respuesta correcta” al explicar:
+            String correctDisplay = optString(opt, "practice_correct_display", null);
+            meta.display = correctDisplay != null ? correctDisplay : correctKey;
+
+            return meta;
+        }
 
         // Otros modos se pueden manejar más adelante
         return null;
@@ -386,7 +418,8 @@ public class PracticaService {
         // --- A) MCQ_AUTO / OPEN_NUMERIC: numérico simple ---
         if ("mcq_auto".equalsIgnoreCase(mode) || "open_numeric".equalsIgnoreCase(mode)) {
             try {
-                double ans = Double.parseDouble(studentRaw.trim());
+                double ans = evalStudentNumeric(studentRaw);
+
                 return withinTolerance(
                         ans,
                         meta.value != null ? meta.value : 0.0,
@@ -395,6 +428,7 @@ public class PracticaService {
                         meta.decimals != null ? meta.decimals : 6
                 );
             } catch (Exception e) {
+                LOG.warnf(e, "No se pudo evaluar expresión numérica del estudiante: %s", studentRaw);
                 return false;
             }
         }
@@ -428,8 +462,14 @@ public class PracticaService {
                 return false;
             }
         }
-
-        // --- C) OPEN_TEXT ---
+        // --- C) MCQ_KEY: el estudiante envía la CLAVE (A, B, C, D, ...) ---
+        if ("mcq_key".equalsIgnoreCase(mode)) {
+            if (meta.canonical == null) return false;
+            String ans = studentRaw.trim();
+            // Normalizamos a mayúsculas para comparar
+            return ans.equalsIgnoreCase(meta.canonical.trim());
+        }
+        // --- D) OPEN_TEXT ---
         if ("open_text".equalsIgnoreCase(mode)) {
             String format = meta.textFormat != null ? meta.textFormat : "plain";
             boolean cs = meta.caseSensitive != null ? meta.caseSensitive : false;
@@ -593,22 +633,152 @@ public class PracticaService {
         }
 
         if ("latex".equalsIgnoreCase(format)) {
-            // quitamos espacios y símbolos "decorativos"
+            // --- NORMALIZACIONES ESPECÍFICAS PARA LATEX ---
+
+            // 1) Quitar \left y \right
+            out = out.replace("\\left", "")
+                    .replace("\\right", "");
+
+            // 2) Colapsar exponentes y subíndices con llaves
+            out = out.replaceAll("\\^\\{([^{}]+)}", "^$1");
+            out = out.replaceAll("_(\\{([^{}]+)})", "_$2");
+
+            // 2.b) Normalizar la constante e de MathLive:
+            //     \exponentialE, \mathrm{e}, \operatorname{e} -> e
+            out = out.replace("\\exponentiale", "e");
+            out = out.replace("\\mathrm{e}", "e");
+            out = out.replace("\\operatorname{e}", "e");
+
+            // 3) Normalizar fracciones:
+            //    \frac{A}{B} o \dfrac{A}{B} -> (A)/(B)
+            out = out.replaceAll(
+                "\\\\d?frac\\s*\\{([^}]*)}\\s*\\{([^}]*)}",
+                "($1)/($2)"
+            );
+
+            // 4) Quitar espacios y símbolos "decorativos"
             out = out.replaceAll("\\s+", "");
             out = out
-                    .replace("\\,", "")
-                    .replace("\\;", "")
-                    .replace("\\!", "")
-                    .replace("\\ ", "")
-                    .replace("~", "")
-                    .replace("$", ""); // ignorar delimitadores $...$
+                .replace("\\,", "")
+                .replace("\\;", "")
+                .replace("\\!", "")
+                .replace("\\ ", "")
+                .replace("~", "")
+                .replace("$", "");
 
-            out = out.replace("\\left", "")
-                     .replace("\\right", "");
+            // 5) Eliminar llaves innecesarias {x} -> x
+            out = out.replaceAll("\\{([^{}]+)}", "$1");
+            // 🔹 6) Normalizar decimales: 2.400 -> 2.4, 0.300 -> 0.3, etc.
+            out = normalizeDecimalsInLatex(out);
         } else {
             out = out.replaceAll("\\s+", " ");
+            out = out.replace(".", "");
+            out = out.replace("/", "");
         }
+        LOG.infof("el término out retorna como: %s", out);
 
         return out;
     }
+
+    /**
+     * Caso especial: poisson_aprox (P4) — la respuesta se corrige como
+     * expresión LaTeX con el valor numérico de λ = m * pmin * t.
+     *
+     * El estudiante debe escribir, por ejemplo:
+     *   1 - e^{-2.400}(1+2.400)
+     * o alguna forma equivalente.
+     */
+    private PracticeAnswerMeta buildPoissonLatexMeta(PlantillaPregunta t,
+                                                    Map<String,Object> params) {
+        Number mNum    = (Number) params.get("m");
+        Number pminNum = (Number) params.get("pmin");
+        Number tNum    = (Number) params.get("t");
+
+        if (mNum == null || pminNum == null || tNum == null) {
+            return null;
+        }
+
+        double lambda = mNum.doubleValue()
+                    * pminNum.doubleValue()
+                    * tNum.doubleValue();
+
+        // mismo formateo que ves en los sliders (3 decimales)
+        String lambdaStr = df(3).format(lambda);
+
+        // --- Forma canónica (SIN $) para comparar ---
+        String exprCanon = "1 - e^{-" + lambdaStr + "}(1+" + lambdaStr + ")";
+
+        // Otras formas equivalentes (también sin $)
+        List<String> accepted = new ArrayList<>();
+        accepted.add("1 - (1+" + lambdaStr + ")e^{-" + lambdaStr + "}");
+        accepted.add("1 - e^{-" + lambdaStr + "} - " + lambdaStr + "e^{-" + lambdaStr + "}");
+
+        // --- LaTeX para mostrar (CON $) ---
+        String latexPreview = "$" + exprCanon + "$";
+
+        PracticeAnswerMeta meta = new PracticeAnswerMeta();
+        meta.mode = "open_text";
+        meta.textFormat = "latex";
+        meta.format = "latex";
+        meta.caseSensitive = false;
+        meta.trim = true;
+
+        // comparación
+        meta.canonical = exprCanon;
+        meta.accept = accepted;
+
+        // lo que ve el estudiante como respuesta correcta
+        meta.latexPreview = latexPreview;
+        meta.display = latexPreview;
+
+        return meta;
+    }
+
+    /**
+     * Evalúa una expresión numérica escrita por el estudiante, que puede venir en LaTeX
+     * (por ejemplo, \frac{5}{16}) o como expresión simple (5/16, 0.3125, etc.).
+     */
+    private static double evalStudentNumeric(String raw) {
+        if (raw == null) {
+            throw new IllegalArgumentException("Expresión nula");
+        }
+
+        // 1) Normalizamos como si fuera LaTeX para soportar \frac, \dfrac, \left, etc.
+        String norm = normalizeText(raw, "latex", false, true);
+        LOG.infof("expresión estudiante normalizada para eval: %s", norm);
+
+        // 2) Evaluamos con ExprEval
+        //    No usamos parámetros porque el estudiante no debería usar variables aquí.
+        return ExprEval.eval(norm, Collections.emptyMap());
+    }
+
+    private static String normalizeDecimalsInLatex(String s) {
+    if (s == null || s.isEmpty()) return s;
+
+    // Coincide con números tipo 2, 2.4, 2.400, 0.300, etc.
+    java.util.regex.Pattern p = java.util.regex.Pattern.compile("([0-9]+(?:\\.[0-9]+)?)");
+    java.util.regex.Matcher m = p.matcher(s);
+    StringBuffer sb = new StringBuffer();
+
+    while (m.find()) {
+        String numStr = m.group(1);
+        String normalized = numStr;
+        try {
+            // Usamos BigDecimal para mantener exactitud y quitar ceros de más
+            java.math.BigDecimal bd = new java.math.BigDecimal(numStr);
+            bd = bd.stripTrailingZeros();
+            normalized = bd.toPlainString();
+        } catch (NumberFormatException ex) {
+            // Si algo raro pasa, dejamos el número tal cual
+            normalized = numStr;
+        }
+
+        // OJO: hay que escapar $ en el replacement
+        m.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(normalized));
+    }
+    m.appendTail(sb);
+    return sb.toString();
+}
+
+
 }
