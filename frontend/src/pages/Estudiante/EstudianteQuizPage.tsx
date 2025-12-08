@@ -9,8 +9,7 @@ import type {
   LoteRespuestasDTO,
 } from "../../api/estudianteApi";
 import { useAuthStrict } from "../../auth/AuthContext";
-
-// 🚩 KaTeX (estilos globales de render LaTeX)
+import { MathExpressionInput } from "../../components/MathExpressionInput";
 import "katex/dist/katex.min.css";
 import { MathInline, MathBlock } from "../../utils/MathText";
 
@@ -437,6 +436,18 @@ function QuestionCard(props: {
     valorEsperado?: string | null;     // texto o LaTeX
   };
 }) {
+  // --- estado local SOLO para lo que ve el usuario ---
+  const [openNumRaw, setOpenNumRaw] = useState<string>(
+    props.openValueNumber != null ? String(props.openValueNumber) : ""
+  );
+
+  // Si desde fuera cambian el valor (por ejemplo al cargar retro),
+  // sincronizamos el texto mostrado:
+  useEffect(() => {
+    setOpenNumRaw(
+      props.openValueNumber != null ? String(props.openValueNumber) : ""
+    );
+  }, [props.openValueNumber]);
   return (
   <div className="rounded-2xl border border-gray-300 bg-white p-5 shadow-sm">
     <div className="mb-3 text-sm font-medium text-gray-800">
@@ -506,41 +517,50 @@ function QuestionCard(props: {
     ) : props.tipo === "OPEN_NUM" ? (
       <div className="space-y-2">
         <input
-          type="number"
+          type="text"
           className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
-          value={props.openValueNumber ?? ""}
-          onChange={(e) =>
-            props.onChangeOpenNumber(
-              e.target.value === "" ? undefined : Number(e.target.value)
-            )
-          }
+          value={openNumRaw}
+          onChange={(e) => {
+            const raw = e.target.value;
+            setOpenNumRaw(raw);                 // <- SIEMPRE actualizo lo que ve el usuario
+
+            // Normalizo coma -> punto
+            const normalized = raw.replace(",", ".");
+
+            // Si está vacío o solo espacios, mando "sin respuesta"
+            if (raw.trim() === "") {
+              props.onChangeOpenNumber(undefined);
+              return;
+            }
+
+            const n = Number(normalized);
+
+            // Si es un número válido, lo mando al padre como number
+            if (!Number.isNaN(n)) {
+              props.onChangeOpenNumber(n);
+            } else {
+              // Si no es número (ej: "-", "." mientras escribe),
+              // no rompo nada: el usuario sigue viendo lo que escribió
+              props.onChangeOpenNumber(undefined);
+            }
+          }}
           disabled={props.disabled}
-          placeholder="Escribe un número..."
+          placeholder="Escribe un número, por ejemplo 1.33 o 1,33"
         />
       </div>
     ) : (
+      // OPEN_TEXT
       <div className="space-y-2">
-        <label className="block text-xs text-gray-600">
-          Puedes escribir tu respuesta en LaTeX, por ejemplo:{" "}
-          <code className="font-mono text-[11px] text-gray-800">
-            {"f_Y(y)=\\frac{2^{1/3}}{3y^{1/3}},\\ 0<y<2"}
-          </code>
+        <label className="block text-xs text-gray-600 mb-1">
+          Escribe tu respuesta en formato matemático:
         </label>
 
-        <textarea
-          className="w-full min-h-[80px] rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
+        <MathExpressionInput
           value={props.openValueText ?? ""}
-          onChange={(e) => props.onChangeOpenText(e.target.value)}
+          onChange={(latex) => props.onChangeOpenText(latex)}
+          placeholder="f(y)=\frac{2^{1/3}}{3y^{1/3}},\ 0<y<2"
           disabled={props.disabled}
-          placeholder="Escribe aquí tu expresión (se acepta LaTeX)..."
         />
-
-        {props.openValueText && (
-          <div className="mt-1 text-xs text-gray-600">
-            Vista previa:
-            <MathBlock text={props.openValueText} />
-          </div>
-        )}
       </div>
     )}
 

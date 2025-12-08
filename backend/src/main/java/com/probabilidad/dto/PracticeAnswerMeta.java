@@ -38,6 +38,10 @@ public class PracticeAnswerMeta {
     public String leftDisplay;
     public String rightDisplay;
 
+    public String prefix;
+    public String suffix;
+
+
     public String sep; // separador usado en display: " , ", " y ", etc.
 
     // ====== TEXTO (open_text) ======

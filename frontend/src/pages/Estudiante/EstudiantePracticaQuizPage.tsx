@@ -16,8 +16,33 @@ import { MathExpressionInput } from "../../components/MathExpressionInput";
 
 import "katex/dist/katex.min.css";
 import { MathInline, MathBlock } from "../../utils/MathText";
+import type {
+  ParamsState,
+  SliderConfig,
+  ParamsValidator,
+} from "../../constants/practice/types";
+import {
+  PARAM_SLIDER_CONFIG_C1,
+  validateParamsC1,
+  PLACEHOLDER_EXPR_C1,
+} from "../../constants/practice/paramsC1";
+import {
+  PARAM_SLIDER_CONFIG_C2,
+  validateParamsC2,
+  PLACEHOLDER_EXPR_C2,
+} from "../../constants/practice/paramsC2";
+import {
+  PARAM_SLIDER_CONFIG_C3A,
+  validateParamsC3A,
+  PLACEHOLDER_EXPR_C3A,
+} from "../../constants/practice/paramsC3A";
+import {
+  PARAM_SLIDER_CONFIG_C3B,
+  validateParamsC3B,
+  PLACEHOLDER_EXPR_C3B,
+} from "../../constants/practice/paramsC3B";
 
-type ParamsState = Record<string, any>;
+type AnswerMode = "decimal_pair" | "expression_pair" | "default";
 
 type QuestionState = {
   templateId: number;
@@ -32,175 +57,113 @@ type QuestionState = {
   answer: string;
   checking: boolean;
   result: PracticeCheckResultDTO | null;
-};
 
-// Configuración de sliders por parámetro
-type SliderConfig = {
-  min: number;
-  max: number;
-  step: number;
-  asPercent?: boolean; // mostrar 0.25 como "25 %"
-  label?: string;
-};
-
-const PARAM_SLIDER_CONFIG: Record<string, SliderConfig> = {
-  // P1 – Multinomial contagios
-  p_covid: {
-    min: 0.2,
-    max: 0.35,
-    step: 0.01,
-    asPercent: true,
-    label: "Probabilidad de contagio de Covid-19",
-  },
-  p_omicron: {
-    min: 0.25,
-    max: 0.4,
-    step: 0.01,
-    asPercent: true,
-    label: "Probabilidad de contagio de Omicron",
-  },
-  p_n1h1: {
-    min: 0.3,
-    max: 0.45,
-    step: 0.01,
-    asPercent: true,
-    label: "Probabilidad de contagio de N1H1",
-  },
-  x_covid: {
-    min: 0,
-    max: 5,
-    step: 1,
-    label: "Cantidad de contagiados de Covid-19",
-  },
-  x_omicron: {
-    min: 0,
-    max: 5,
-    step: 1,
-    label: "Cantidad de contagiados de Omicron",
-  },
-  x_n1h1: {
-    min: 0,
-    max: 5,
-    step: 1,
-    label: "Cantidad de contagiados de N1H1",
-  },
-
-  // P2 – Combinatoria por grupos
-  jovenes_tot: {
-    min: 1,
-    max: 10,
-    step: 1,
-    label: "Total de Jóvenes",
-  },
-  mayores_tot: {
-    min: 1,
-    max: 10,
-    step: 1,
-    label: "Total de Mayores",
-  },
-  ninos_tot: {
-    min: 1,
-    max: 10,
-    step: 1,
-    label: "Total de Niños",
-  },
-  x_jov: {
-    min: 1,
-    max: 10,
-    step: 1,
-    label: "Jóvenes que se contagian",
-  },
-  x_may: {
-    min: 1,
-    max: 10,
-    step: 1,
-    label: "Mayores que se contagian",
-  },
-  x_nino: {
-    min: 1,
-    max: 10,
-    step: 1,
-    label: "Niños que se contagian",
-  },
-
-  // P3 – Serie 3 de 4
-  gana: { min: 1, max: 4, step: 1 },
-  total: { min: 1, max: 7, step: 1 },
-  pA: { min: 0.5, max: 0.7, step: 0.01, asPercent: true },
-
-  // P4 – Poisson aprox
-  m: { min: 1000, max: 20000, step: 500 },
-  pmin: { min: 0.0001, max: 0.0003, step: 0.00001 },
-  t: { min: 1, max: 10, step: 1 },
+  answerError?: string | null;
+  answerMode?: AnswerMode;
 };
 
 // Claves que NO queremos mostrar como sliders (pero sí enviar al backend)
 const HIDDEN_PARAMS = new Set(["p_jov", "p_may", "p_nino"]);
 
-/**
- * Validaciones de parámetros por plantilla.
- * - P1: p_covid + p_omicron + p_n1h1 = 1.
- * - P2: no se pueden contagiar más personas de las que entran.
- */
-function validateParams(_templateId: number, params: ParamsState): string | null {
-  // --- Regla multinomial P1 ---
-  const hasMultParams =
-    params.p_covid !== undefined &&
-    params.p_omicron !== undefined &&
-    params.p_n1h1 !== undefined;
+function normalizeNumericPair(raw: string, decimals = 2): string | null {
+  const parts = raw.split(",");
+  if (parts.length !== 2) return null;
 
-  if (hasMultParams) {
-    const p1 = Number(params.p_covid ?? 0);
-    const p2 = Number(params.p_omicron ?? 0);
-    const p3 = Number(params.p_n1h1 ?? 0);
-    const sum = p1 + p2 + p3;
-    if (Math.abs(sum - 1) > 1e-6) {
-      return "Las probabilidades p_covid, p_omicron y p_n1h1 deben sumar 100 %.";
-    }
+  const [leftRaw, rightRaw] = parts.map((p) => p.trim());
+  const leftVal = Number(leftRaw);
+  const rightVal = Number(rightRaw);
+
+  if (!Number.isFinite(leftVal) || !Number.isFinite(rightVal)) {
+    return null;
   }
 
-  // --- Regla combinatoria P2: x_* <= *_tot ---
-  const errors: string[] = [];
+  const leftNorm = leftVal.toFixed(decimals);
+  const rightNorm = rightVal.toFixed(decimals);
 
-  const pairs: Array<{
-    xKey: keyof ParamsState;
-    totKey: keyof ParamsState;
-    label: string;
-  }> = [
-    { xKey: "x_jov", totKey: "jovenes_tot", label: "jóvenes" },
-    { xKey: "x_may", totKey: "mayores_tot", label: "mayores" },
-    { xKey: "x_nino", totKey: "ninos_tot", label: "niños" },
-  ];
-
-  for (const { xKey, totKey, label } of pairs) {
-    if (params[xKey] !== undefined && params[totKey] !== undefined) {
-      const xVal = Number(params[xKey]);
-      const totVal = Number(params[totKey]);
-      if (xVal > totVal) {
-        errors.push(
-          `No pueden contagiarse más ${label} de los que ingresan ( ${String(
-            xKey
-          )} > ${String(totKey)} ).`
-        );
-      }
-    }
-  }
-
-  if (errors.length > 0) {
-    return errors.join(" ");
-  }
-
-  return null;
+  return `${leftNorm}, ${rightNorm}`;
 }
+
+// Mapeo de sliders y validadores por corte
+const SLIDERS_BY_CORTE: Record<PracticeCorte, Record<string, SliderConfig>> = {
+  C1: PARAM_SLIDER_CONFIG_C1,
+  C2: PARAM_SLIDER_CONFIG_C2,
+  C3A: PARAM_SLIDER_CONFIG_C3A,
+  C3B: PARAM_SLIDER_CONFIG_C3B,
+};
+
+const VALIDATORS_BY_CORTE: Record<PracticeCorte, ParamsValidator> = {
+  C1: validateParamsC1,
+  C2: validateParamsC2,
+  C3A: validateParamsC3A,
+  C3B: validateParamsC3B,
+};
+
+const PLACEHOLDERS_BY_CORTE: Record<PracticeCorte, Record<string, string>> = {
+  C1: PLACEHOLDER_EXPR_C1,
+  C2: PLACEHOLDER_EXPR_C2,
+  C3A: PLACEHOLDER_EXPR_C3A,
+  C3B: PLACEHOLDER_EXPR_C3B,
+};
 
 export default function EstudiantePracticaQuizPage() {
   const { ready, authenticated } = useAuthStrict();
   const { corte } = useParams<{ corte: string }>();
-  const corteCode = (corte ?? "C1") as PracticeCorte;
+  const rawCorte = (corte ?? "") as PracticeCorte;
+  const corteCode: PracticeCorte =
+    rawCorte === "C1" ||
+    rawCorte === "C2" ||
+    rawCorte === "C3A" ||
+    rawCorte === "C3B"
+      ? rawCorte
+      : "C1";
+  const sliderConfigForCorte =
+    SLIDERS_BY_CORTE[corteCode] ?? ({} as Record<string, SliderConfig>);
+
+  const validateParamsForCorte =
+    VALIDATORS_BY_CORTE[corteCode] ??
+    ((_: number, __: ParamsState) => null);
 
   const [loadingPage, setLoadingPage] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuestionState[]>([]);
+
+  function applyBoldHeadings(chunk: string): string {
+    // ***Texto***  →  $ ... $ (mezcla de \textbf{...} + partes matemáticas)
+    return chunk.replace(/\*\*\*(.+?)\*\*\*/gs, (_match, inner: string) => {
+      // Buscamos sub-bloques tipo \[ ... \] dentro del heading
+      const mathRegex = /\\\[(.*?)\\\]/g;
+      let lastIndex = 0;
+      let m: RegExpExecArray | null;
+      const pieces: string[] = [];
+
+      while ((m = mathRegex.exec(inner)) !== null) {
+        const start = m.index!;
+        const end = start + m[0].length;
+        const mathInner = m[1]; // por ejemplo, "\Phi"
+
+        // Texto antes de este bloque matemático
+        const before = inner.slice(lastIndex, start);
+        if (before.trim().length > 0) {
+          // Lo envolvemos en \textbf{...}
+          pieces.push(`\\textbf{${before}}`);
+        }
+
+        // Parte matemática (sin \[ \], solo el contenido)
+        pieces.push(mathInner);
+
+        lastIndex = end;
+      }
+
+      // Texto que queda después del último bloque \[...\]
+      const after = inner.slice(lastIndex);
+      if (after.trim().length > 0) {
+        pieces.push(`\\textbf{${after}}`);
+      }
+
+      const math = pieces.join(" ");
+      return `$${math}$`;
+    });
+  }
 
   // Helper: refrescar enunciado de una pregunta con params concretos
   const refreshQuestionWithParams = async (
@@ -225,6 +188,7 @@ export default function EstudiantePracticaQuizPage() {
                 params,
                 loading: false,
                 error: null,
+                answerMode: q.answerMode,
               }
             : q
         )
@@ -247,6 +211,26 @@ export default function EstudiantePracticaQuizPage() {
     }
   };
 
+  const toggleAnswerMode = (templateId: number) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.templateId === templateId
+          ? {
+              ...q,
+              answerMode:
+                q.answerMode === "expression_pair"
+                  ? "decimal_pair"
+                  : "expression_pair",
+              // al cambiar de modo limpiamos respuesta y feedback
+              answer: "",
+              answerError: null,
+              result: null,
+            }
+          : q
+      )
+    );
+  };
+
   // Cargar TODAS las preguntas de ese corte
   useEffect(() => {
     if (!ready || !authenticated || !corteCode) return;
@@ -267,6 +251,11 @@ export default function EstudiantePracticaQuizPage() {
           templates.map(async (tpl) => {
             try {
               const q = await API.renderPractica(tpl.id, {});
+              const answerMeta = (q as any)?.answerMeta;
+              const initialAnswerMode: AnswerMode =
+                answerMeta?.mode === "mcq_auto_pair"
+                  ? "decimal_pair"
+                  : "default";
               return {
                 templateId: tpl.id,
                 label: tpl.label,
@@ -277,6 +266,8 @@ export default function EstudiantePracticaQuizPage() {
                 answer: "",
                 checking: false,
                 result: null,
+                answerError: null,
+                answerMode: initialAnswerMode,
               };
             } catch (e: any) {
               console.error(e);
@@ -292,6 +283,8 @@ export default function EstudiantePracticaQuizPage() {
                 answer: "",
                 checking: false,
                 result: null,
+                answerError: null,
+                answerMode: "default",
               };
             }
           })
@@ -325,7 +318,7 @@ export default function EstudiantePracticaQuizPage() {
     const baseParams: ParamsState = current?.params ?? {};
     const newParams: ParamsState = { ...baseParams, [key]: value };
 
-    const validationError = validateParams(templateId, newParams);
+    const validationError = validateParamsForCorte(templateId, newParams);
 
     // Actualizamos estado (params + error de validación)
     setQuestions((prev) =>
@@ -351,7 +344,58 @@ export default function EstudiantePracticaQuizPage() {
   const handleAnswerChange = (templateId: number, value: string) => {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.templateId === templateId ? { ...q, answer: value } : q
+        q.templateId === templateId
+          ? {
+              ...q,
+              answer: value,
+              // si está escribiendo, limpiamos error visual de respuesta
+              answerError: null,
+            }
+          : q
+      )
+    );
+  };
+
+  const handleAnswerBlur = (templateId: number) => {
+    const current = questions.find((q) => q.templateId === templateId);
+    if (!current || !current.question) return;
+
+    const answerMeta = (current.question as any)?.answerMeta;
+    if (answerMeta?.mode !== "mcq_auto_pair") return;
+
+    const raw = current.answer.trim();
+    if (!raw) return;
+
+    // En modo expresión NO normalizamos ni validamos aquí
+    if (current.answerMode === "expression_pair") return;
+
+    const decimals = answerMeta?.leftDecimals ?? 2;
+    const normalized = normalizeNumericPair(raw, decimals);
+
+    if (!normalized) {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.templateId === templateId
+            ? {
+                ...q,
+                answerError:
+                  "Debes escribir dos números separados por coma, por ejemplo: 0.12, 0.35",
+              }
+            : q
+        )
+      );
+      return;
+    }
+
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.templateId === templateId
+          ? {
+              ...q,
+              answer: normalized,
+              answerError: null,
+            }
+          : q
       )
     );
   };
@@ -361,24 +405,80 @@ export default function EstudiantePracticaQuizPage() {
     const current = questions.find((q) => q.templateId === templateId);
     if (!current || !current.question) return;
 
-    const validationError = validateParams(templateId, current.params);
-    if (validationError) {
+    const answerMeta = (current.question as any)?.answerMeta;
+    const rawAnswer = current.answer.trim();
+
+    const isPairNumeric = answerMeta?.mode === "mcq_auto_pair";
+    const isExpressionPair =
+      isPairNumeric && current.answerMode === "expression_pair";
+    const isDecimalPair =
+      isPairNumeric && current.answerMode !== "expression_pair";
+
+    // Validar que haya respuesta
+    if (!rawAnswer) {
       setQuestions((prev) =>
         prev.map((q) =>
-          q.templateId === templateId ? { ...q, error: validationError } : q
+          q.templateId === templateId
+            ? { ...q, answerError: "Por favor, escribe tu respuesta." }
+            : q
         )
       );
       return;
     }
 
-    if (!current.answer || current.answer.trim() === "") {
-      alert("Por favor, escribe tu respuesta.");
+    let payloadAnswer = rawAnswer;
+    if (isExpressionPair) {
+      payloadAnswer = "__expr_pair__:" + rawAnswer;
+    }
+
+    // Validación de formato SOLO para par numérico en modo decimales
+    if (
+      answerMeta?.mode === "mcq_auto_pair" &&
+      current.answerMode !== "expression_pair"
+    ) {
+      const minDecimals = answerMeta?.leftDecimals ?? 2;
+      const decPattern = `\\d+\\.\\d{${minDecimals},}`;
+      const pairRegex = new RegExp(
+        `^\\s*-?${decPattern}\\s*,\\s*-?${decPattern}\\s*$`
+      );
+
+      if (!pairRegex.test(rawAnswer)) {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.templateId === templateId
+              ? {
+                  ...q,
+                  answerError: `Cada número debe tener al menos ${minDecimals} decimales. Ejemplo: 0.${"0".repeat(
+                    minDecimals - 1
+                  )}6, 0.${"0".repeat(minDecimals - 1)}35`,
+                }
+              : q
+          )
+        );
+        return;
+      }
+    }
+
+    const validationError = validateParamsForCorte(
+      templateId,
+      current.params
+    );
+    if (validationError) {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.templateId === templateId
+            ? { ...q, error: validationError }
+            : q
+        )
+      );
       return;
     }
 
     setQuestions((prev) =>
       prev.map((q) =>
-        q.templateId === templateId ? { ...q, checking: true } : q
+        q.templateId === templateId
+          ? { ...q, checking: true, answerError: null }
+          : q
       )
     );
 
@@ -386,7 +486,7 @@ export default function EstudiantePracticaQuizPage() {
       const res = await API.checkPractica(
         templateId,
         current.params,
-        current.answer.trim()
+        payloadAnswer
       );
       setQuestions((prev) =>
         prev.map((q) =>
@@ -460,12 +560,38 @@ export default function EstudiantePracticaQuizPage() {
                 ([key]) => !HIDDEN_PARAMS.has(key)
               );
 
-              // --- NUEVO: mirar metadata de respuesta para saber si es texto plano ---
+              // --- mirar metadata de respuesta ---
               const answerMeta = (q.question as any)?.answerMeta;
               const isPlainTextAnswer =
                 answerMeta?.mode === "open_text" &&
                 (answerMeta?.format === "plain" ||
                   answerMeta?.textFormat === "plain");
+              const isPairNumeric = answerMeta?.mode === "mcq_auto_pair";
+              const isMoneyNumeric =
+                (answerMeta?.mode === "mcq_auto" ||
+                  answerMeta?.mode === "open_numeric") &&
+                (answerMeta?.prefix === "$" ||
+                  answerMeta?.suffix?.includes("millones"));
+
+              const isExpressionPair =
+                isPairNumeric && q.answerMode === "expression_pair";
+              const isDecimalPair =
+                isPairNumeric && q.answerMode !== "expression_pair";
+
+              const placeholderMapForCorte =
+                PLACEHOLDERS_BY_CORTE[corteCode] ?? {};
+              const answerPlaceholder =
+                placeholderMapForCorte[q.templateId] ??
+                String.raw`\frac{(1+3+1)!}{1!3!1!}(0.25)^1(0.35)^3(0.3)^1`; // fallback
+              
+              const correctDisplayRaw = q.result?.correctDisplay ?? null;
+              // Si es par numérico y el alumno está en modo expresión, usamos el LaTeX del meta
+              const correctForMode =
+                isPairNumeric &&
+                q.answerMode === "expression_pair" &&
+                answerMeta?.latexPreview
+                  ? (answerMeta.latexPreview as string)
+                  : correctDisplayRaw;
 
               return (
                 <article
@@ -489,7 +615,14 @@ export default function EstudiantePracticaQuizPage() {
                       <h3 className="mb-2 text-xs font-semibold text-gray-700">
                         Enunciado
                       </h3>
-                      <MathBlock text={q.question.stemMd ?? ""} />
+
+                      {q.question.stemMd
+                        ?.split(/\n{2,}/) // separamos por doble salto de línea en párrafos
+                        .map((chunk, i) => (
+                          <p key={i} className="mb-2 text-sm text-gray-900">
+                            <MathInline text={chunk} />
+                          </p>
+                        ))}
                     </div>
                   )}
 
@@ -514,8 +647,9 @@ export default function EstudiantePracticaQuizPage() {
                         {visibleParamsEntries.map(([key, value]) => {
                           const isNumber = typeof value === "number";
                           const sliderCfg = isNumber
-                            ? PARAM_SLIDER_CONFIG[key]
+                            ? sliderConfigForCorte[key]
                             : undefined;
+
                           const numericValue = isNumber
                             ? (value as number)
                             : Number(value);
@@ -596,29 +730,123 @@ export default function EstudiantePracticaQuizPage() {
                   <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <h3 className="mb-3 text-xs font-semibold text-gray-700">
                       Tu respuesta
-                      {isPlainTextAnswer ? "" : " (expresión)"}
+                      {isPlainTextAnswer || isMoneyNumeric || isPairNumeric
+                        ? ""
+                        : " (expresión)"}
                     </h3>
 
+                    {isPairNumeric && (
+                      <div className="mb-2 flex items-center gap-2 text-[11px] text-gray-600">
+                        <span className="font-medium">Modo de respuesta:</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleAnswerMode(q.templateId)}
+                          className="rounded-full border border-gray-300 px-2 py-1 text-[11px] hover:bg-gray-100"
+                        >
+                          {isExpressionPair
+                            ? "Escribir decimales"
+                            : "Escribir como expresión"}
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-3">
-                      {isPlainTextAnswer ? (
-                        // --- PREGUNTAS DE TEXTO PLANO (ej. "Ninguna de las anteriores") ---
-                        <input
-                          type="text"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-blue-400"
-                          placeholder="Escribe tu respuesta (por ejemplo: Ninguna de las anteriores, N/A, NA, …)"
-                          value={q.answer}
-                          onChange={(e) =>
-                            handleAnswerChange(q.templateId, e.target.value)
-                          }
-                        />
+                      {isPairNumeric ? (
+                        isExpressionPair ? (
+                          // === MODO 2: expresión con MathExpressionInput ===
+                          <MathExpressionInput
+                            value={q.answer}
+                            onChange={(latex) =>
+                              handleAnswerChange(q.templateId, latex)
+                            }
+                            placeholder={answerPlaceholder}
+                          />
+                        ) : (
+                          // === MODO 1: decimales simples ===
+                          <>
+                            <input
+                              type="text"
+                              className={
+                                "w-full rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 " +
+                                (q.answerError
+                                  ? "border-red-400 focus:ring-red-400"
+                                  : "border-gray-300 focus:ring-blue-400")
+                              }
+                              placeholder="Escribe dos probabilidades separadas por coma, ej: 0.12, 0.35"
+                              value={q.answer}
+                              onChange={(e) =>
+                                handleAnswerChange(
+                                  q.templateId,
+                                  e.target.value
+                                )
+                              }
+                              onBlur={() => handleAnswerBlur(q.templateId)}
+                            />
+                            {q.answerError && (
+                              <p className="text-xs text-red-500">
+                                {q.answerError}
+                              </p>
+                            )}
+                          </>
+                        )
+                      ) : isMoneyNumeric ? (
+                        // --- Caso dinero: input con prefijo y sufijo ---
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-700">$</span>
+                          <input
+                            type="text"
+                            className={
+                              "flex-1 rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 " +
+                              (q.answerError
+                                ? "border-red-400 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400")
+                            }
+                            placeholder="0.82"
+                            value={q.answer}
+                            onChange={(e) =>
+                              handleAnswerChange(q.templateId, e.target.value)
+                            }
+                          />
+                          <span className="text-xs text-gray-600">
+                            millones
+                          </span>
+                          {q.answerError && (
+                            <p className="text-xs text-red-500">
+                              {q.answerError}
+                            </p>
+                          )}
+                        </div>
+                      ) : isPlainTextAnswer ? (
+                        // === TEXTO PLANO (Ninguna de las anteriores, etc.) ===
+                        <>
+                          <input
+                            type="text"
+                            className={
+                              "w-full rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-1 " +
+                              (q.answerError
+                                ? "border-red-400 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400")
+                            }
+                            placeholder="Escribe tu respuesta (por ejemplo: Ninguna de las anteriores, N/A, NA, …)"
+                            value={q.answer}
+                            onChange={(e) =>
+                              handleAnswerChange(q.templateId, e.target.value)
+                            }
+                          />
+                          {q.answerError && (
+                            <p className="text-xs text-red-500">
+                              {q.answerError}
+                            </p>
+                          )}
+                        </>
                       ) : (
-                        // --- PREGUNTAS DE EXPRESIÓN MATEMÁTICA ---
+                        // === EXPRESIÓN MATEMÁTICA (LaTeX genérico) ===
                         <MathExpressionInput
                           value={q.answer}
                           onChange={(latex) =>
                             handleAnswerChange(q.templateId, latex)
                           }
-                          placeholder={String.raw`\frac{(1+3+1)!}{1!3!1!}(0.25)^1(0.35)^3(0.3)^1`}
+                          placeholder={answerPlaceholder}
                         />
                       )}
 
@@ -642,15 +870,20 @@ export default function EstudiantePracticaQuizPage() {
                         ) : (
                           <div className="space-y-2 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-rose-800">
                             <div>❌ Respuesta incorrecta.</div>
-                            {q.result.correctDisplay && (
+
+                            {correctForMode && (
                               <div className="text-xs">
-                                <span className="opacity-70">
-                                  Respuesta correcta:
-                                </span>
+                                <span className="opacity-70">Respuesta correcta:</span>
                                 <div className="mt-1">
-                                  <MathBlock
-                                    text={q.result.correctDisplay ?? ""}
-                                  />
+                                  {/[\\_^{}]/.test(correctForMode) ? (
+                                    // Parece LaTeX → renderizamos con KaTeX
+                                    <MathBlock text={correctForMode} />
+                                  ) : (
+                                    // Texto / número plano
+                                    <span className="font-mono text-rose-900">
+                                      {correctForMode}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -668,11 +901,14 @@ export default function EstudiantePracticaQuizPage() {
                       </h3>
                       {explicacion
                         .split(/\n{2,}/)
-                        .map((chunk, idx2) => (
-                          <p key={idx2} className="mb-2 text-sm text-blue-900">
-                            <MathInline text={chunk} />
-                          </p>
-                        ))}
+                        .map((chunk, idx2) => {
+                          const processed = applyBoldHeadings(chunk);
+                          return (
+                            <p key={idx2} className="mb-2 text-sm text-blue-900">
+                              <MathInline text={processed} />
+                            </p>
+                          );
+                        })}
                     </div>
                   )}
                 </article>

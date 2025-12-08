@@ -31,6 +31,7 @@ public class PracticaService {
     GeneradorInstanciasService generador;
 
     private static final Logger LOG = Logger.getLogger(PracticaService.class);
+    private static final String EXPR_PAIR_PREFIX = "__expr_pair__:";
 
     // ===================== API PRINCIPAL =====================
 
@@ -114,29 +115,10 @@ public class PracticaService {
                 @SuppressWarnings("unchecked")
                 List<Object> vals = (List<Object>) m.get("values");
 
-                // ¿El override es numérico? → usarlo dentro de un rango razonable
+                // ¿El override es numérico? → ahora lo usamos tal cual (solo redondeo si es int),
+                // sin recortarlo al rango de "values".
                 if (ov instanceof Number numOv) {
                     double v = numOv.doubleValue();
-
-                    // rango a partir de la lista de values (solo numéricos)
-                    double min = Double.POSITIVE_INFINITY;
-                    double max = Double.NEGATIVE_INFINITY;
-                    for (Object oVal : vals) {
-                        if (oVal instanceof Number nVal) {
-                            double d = nVal.doubleValue();
-                            if (d < min) min = d;
-                            if (d > max) max = d;
-                        }
-                    }
-                    // si no se pudo calcular nada, cae al default
-                    if (!Double.isFinite(min) || !Double.isFinite(max)) {
-                        out.put(k, vals.isEmpty() ? null : vals.get(0));
-                        continue;
-                    }
-
-                    // clamp al rango [min, max]
-                    if (v < min) v = min;
-                    if (v > max) v = max;
 
                     // Si el spec pide enteros, redondeamos
                     boolean asInt = Boolean.TRUE.equals(m.get("integer"))
@@ -156,6 +138,7 @@ public class PracticaService {
                     out.put(k, vals.isEmpty() ? null : vals.get(0));
                 }
             }
+
 
             // --------------------------------
             // 2) Caso min/max → clamp estándar
@@ -198,6 +181,11 @@ public class PracticaService {
             return buildPoissonLatexMeta(t, params);
         }
 
+        // Caso especial P2 corte 2 – Exponencial CDF (lambda * t numérico dentro de la expresión)
+        if ("exponencial_cdf".equalsIgnoreCase(t.family)) {
+            return buildExponencialCdfMeta(t, params);
+        }
+
         Map<String,Object> opt = t.optionSchema;
         if (opt == null) return null;
 
@@ -211,22 +199,61 @@ public class PracticaService {
         // ----- 1) MCQ numérico / fracción -----
         if ("mcq_auto".equalsIgnoreCase(mode) && opt.containsKey("correct_expr")) {
 
-            String fmt = optString(opt,"format","number");
-            int decimals = optInt(opt,"decimals",4);
-            int maxDen = optInt(opt,"max_denominator",1000);
+            String fmt = optString(opt, "format", "number");
+            int decimals = optInt(opt, "practice_decimals",
+                                optInt(opt, "decimals", 4));
+            int maxDen = optInt(opt, "max_denominator", 1000);
+
+            String prefix = optString(opt, "prefix", "");
+            String suffix = optString(opt, "suffix", "");
 
             double correctValue = ExprEval.eval(String.valueOf(opt.get("correct_expr")), params);
 
             PracticeAnswerMeta meta = new PracticeAnswerMeta();
             meta.mode = "mcq_auto";
-            meta.value = correctValue;
             meta.format = fmt;
             meta.decimals = decimals;
             meta.maxDenominator = maxDen;
+            meta.prefix = prefix;
+            meta.suffix = suffix;
 
-            meta.display = formatNumberForDisplay(correctValue, fmt, decimals, maxDen);
+            String displayTemplate = optString(
+                opt,
+                "practice_correct_display",
+                optString(opt, "correct_display", null)
+            );
+
+            String baseDisplay;
+            if (displayTemplate != null) {
+                baseDisplay = generador.interpolar(displayTemplate, params);
+                if (baseDisplay.contains("\\") || baseDisplay.contains("$")) {
+                    meta.latexPreview = baseDisplay;
+                }
+            } else {
+                baseDisplay = formatNumberForDisplay(correctValue, fmt, decimals, maxDen);
+            }
+
+            // ✅ NUEVO: para evaluar usamos el MISMO valor que mostramos (ya redondeado)
+            double valueForEval = correctValue;
+            if ("number".equalsIgnoreCase(fmt)) {
+                try {
+                    // por si algún día usas coma de miles, la limpiamos
+                    valueForEval = Double.parseDouble(baseDisplay.replace(",", ""));
+                } catch (NumberFormatException ignore) {
+                    // si falla, nos quedamos con correctValue
+                }
+            }
+            meta.value = valueForEval;
+
+            if (!prefix.isEmpty() || !suffix.isEmpty()) {
+                meta.display = prefix + baseDisplay + suffix;
+            } else {
+                meta.display = baseDisplay;
+            }
+
             return meta;
         }
+
 
         // ----- 2) OPEN_NUMERIC -----
         if ("open_numeric".equalsIgnoreCase(mode) && opt.containsKey("expected_expr")) {
@@ -296,6 +323,14 @@ public class PracticaService {
             meta.rightDisplay = formatNumberForDisplay(rightVal, rightFmt, rightDec, rightMaxDen);
 
             meta.display = meta.leftDisplay + sep + meta.rightDisplay;
+
+            String latexPairTpl = optString(opt, "practice_correct_display_expr", null);
+            if (latexPairTpl != null) {
+                String latexPair = generador.interpolar(latexPairTpl, params);
+                meta.latexPreview = latexPair;
+                meta.display = latexPair;               // lo que muestras como "respuesta correcta"
+                meta.canonical = latexPair.replace("$", "").trim(); // para comparar
+            }
 
             return meta;
         }
@@ -433,15 +468,32 @@ public class PracticaService {
             }
         }
 
-        // --- B) MCQ_AUTO_PAIR: par de números ---
+        // --- B) MCQ_AUTO_PAIR: par de números O expresión LaTeX ---
         if ("mcq_auto_pair".equalsIgnoreCase(mode)) {
+
+            // 1) ¿Viene como expresión LaTeX (modo expresión en el front)?
+            if (studentRaw.startsWith(EXPR_PAIR_PREFIX)) {
+                if (meta.canonical == null) return false;
+
+                String rawExpr = studentRaw.substring(EXPR_PAIR_PREFIX.length());
+
+                // comparamos como LaTeX normalizado
+                String normAns   = normalizeText(rawExpr, "latex", false, true);
+                String normCanon = normalizeText(meta.canonical, "latex", false, true);
+
+                LOG.infof("normAns(pair)   = '%s'", normAns);
+                LOG.infof("normCanon(pair) = '%s'", normCanon);
+
+                return normAns.equals(normCanon);
+            }
+
+            // 2) Caso numérico (modo "Escribir decimales"): lo de antes
             try {
-                // separadores básicos: coma o punto y coma
                 String[] parts = studentRaw.split("[;,]");
                 if (parts.length != 2) return false;
 
-                double leftAns  = Double.parseDouble(parts[0].trim());
-                double rightAns = Double.parseDouble(parts[1].trim());
+                double leftAns  = evalStudentNumeric(parts[0].trim());
+                double rightAns = evalStudentNumeric(parts[1].trim());
 
                 double leftExpected  = meta.leftValue  != null ? meta.leftValue  : 0.0;
                 double rightExpected = meta.rightValue != null ? meta.rightValue : 0.0;
@@ -454,11 +506,16 @@ public class PracticaService {
                 int leftDec  = meta.leftDecimals  != null ? meta.leftDecimals  : 4;
                 int rightDec = meta.rightDecimals != null ? meta.rightDecimals : 4;
 
-                boolean okLeft = withinTolerance(leftAns, leftExpected, leftTolAbs, leftTolPct, leftDec);
-                boolean okRight = withinTolerance(rightAns, rightExpected, rightTolAbs, rightTolPct, rightDec);
+                boolean okLeft = withinTolerance(
+                    leftAns, leftExpected, leftTolAbs, leftTolPct, leftDec
+                );
+                boolean okRight = withinTolerance(
+                    rightAns, rightExpected, rightTolAbs, rightTolPct, rightDec
+                );
 
                 return okLeft && okRight;
             } catch (Exception e) {
+                LOG.warnf(e, "No se pudo evaluar par numérico del estudiante: %s", studentRaw);
                 return false;
             }
         }
@@ -480,6 +537,9 @@ public class PracticaService {
             // 1) canonical
             if (meta.canonical != null) {
                 String normCanon = normalizeText(meta.canonical, format, cs, tr);
+                LOG.infof("normAns   = '%s' (len=%d)", normAns, normAns.length());
+                LOG.infof("normCanon = '%s' (len=%d)", normCanon, normCanon.length());
+
                 if (normAns.equals(normCanon)) return true;
             }
 
@@ -585,19 +645,21 @@ public class PracticaService {
     }
 
     private static String formatNumberForDisplay(double value,
-                                                 String format,
-                                                 int decimals,
-                                                 int maxDenominator) {
+                                                String format,
+                                                int decimals,
+                                                int maxDenominator) {
         if ("fraction".equalsIgnoreCase(format)) {
             return toLatexFraction(value, maxDenominator);
         }
         if ("percent".equalsIgnoreCase(format)) {
             double v = value * 100.0;
-            return df(decimals).format(v) + "\\%";
+            // Mostramos porcentaje como texto normal, sin barra de LaTeX
+            return df(decimals).format(v) + "%";
         }
         // default: número
         return df(decimals).format(value);
     }
+
 
     private static boolean withinTolerance(double ans,
                                            double expected,
@@ -632,12 +694,35 @@ public class PracticaService {
             out = out.toLowerCase(Locale.ROOT);
         }
 
+        if ("latex_text".equalsIgnoreCase(format)) {
+            out = out.trim().toLowerCase(Locale.ROOT);
+            out = out.replace("\\left", "")
+                    .replace("\\right", "")
+                    .replace("\\,", "")
+                    .replace("\\;", "")
+                    .replace("\\!", "")
+                    .replace("\\ ", "")
+                    .replace("\\quad", "")
+                    .replace("~", "")
+                    .replace("$", "");
+            out = out.replaceAll("\\s+", "");
+            return out;
+        }
+
+
         if ("latex".equalsIgnoreCase(format)) {
             // --- NORMALIZACIONES ESPECÍFICAS PARA LATEX ---
 
             // 1) Quitar \left y \right
             out = out.replace("\\left", "")
                     .replace("\\right", "");
+
+            // --- 1.b) Normalizar fracciones numéricas simples en exponentes:
+            // \frac23, \frac{2}{3}, \dfrac23, \dfrac{2}{3} -> 2/3
+            out = out.replaceAll(
+                "\\\\d?frac\\s*\\{?\\s*([0-9])\\s*\\}?\\s*\\{?\\s*([0-9])\\s*\\}?",
+                "$1/$2"
+            );
 
             // 2) Colapsar exponentes y subíndices con llaves
             out = out.replaceAll("\\^\\{([^{}]+)}", "^$1");
@@ -648,6 +733,20 @@ public class PracticaService {
             out = out.replace("\\exponentiale", "e");
             out = out.replace("\\mathrm{e}", "e");
             out = out.replace("\\operatorname{e}", "e");
+
+            // 2.c) ✅ NUEVO: Normalizar la Φ de la normal estándar
+            //     \Phi, \phi -> phi (función phi() que ExprEval conoce)
+            out = out.replace("\\Phi", "phi");
+            out = out.replace("\\phi", "phi");
+
+            // 2.d) ✅ NUEVO: Normalizar raíces cuadradas
+            //     \sqrt{A} -> sqrt(A)
+            out = out.replaceAll(
+                "\\\\sqrt\\s*\\{([^}]*)}",
+                "sqrt($1)"
+            );
+            // fallback por si viene como \sqrt(…)
+            out = out.replace("\\sqrt", "sqrt");
 
             // 3) Normalizar fracciones:
             //    \frac{A}{B} o \dfrac{A}{B} -> (A)/(B)
@@ -664,7 +763,10 @@ public class PracticaService {
                 .replace("\\!", "")
                 .replace("\\ ", "")
                 .replace("~", "")
-                .replace("$", "");
+                .replace("$", "")
+                .replace("\\cdot", "")
+                .replace("\\cdotp", "")
+                .replace("\\quad", "");
 
             // 5) Eliminar llaves innecesarias {x} -> x
             out = out.replaceAll("\\{([^{}]+)}", "$1");
@@ -733,6 +835,71 @@ public class PracticaService {
 
         return meta;
     }
+
+    /**
+     * Caso especial: exponencial_cdf (P2 C2).
+     * Para la práctica queremos:
+     *  - Corrección numérica (como mcq_auto).
+     *  - Mostrar la expresión con λ t ya multiplicado, por ejemplo 1 - e^{-0.5}.
+     */
+    private PracticeAnswerMeta buildExponencialCdfMeta(PlantillaPregunta t,
+                                                    Map<String,Object> params) {
+
+        Map<String,Object> opt = t.optionSchema;
+        if (opt == null || !opt.containsKey("correct_expr")) {
+            return null;
+        }
+
+        // Valor numérico correcto usando el mismo "correct_expr" del schema
+        double correctValue = ExprEval.eval(String.valueOf(opt.get("correct_expr")), params);
+
+        String fmt      = optString(opt, "format",   "number");
+        int decimals    = optInt(opt,    "decimals", 4);
+        int maxDen      = optInt(opt,    "max_denominator", 1000);
+
+        // λ y t desde los parámetros
+        Number lambdaNum = (Number) params.get("lambda");
+        Number tNum      = (Number) params.get("t");
+
+        if (lambdaNum == null || tNum == null) {
+            return null;
+        }
+
+        double lambdaT = lambdaNum.doubleValue() * tNum.doubleValue();
+
+        // Lo formateamos "bonito": sin ceros de más ni notación científica
+        String lambdaTStr = formatCompactDecimal(lambdaT);
+
+        // Expresión "canónica" para mostrar: 1 - e^{-λt}
+        String exprLatex = "$ 1 - e^{-" + lambdaTStr + "} $";
+
+        PracticeAnswerMeta meta = new PracticeAnswerMeta();
+        meta.mode = "mcq_auto";      // se sigue corrigiendo numéricamente
+        meta.value = correctValue;
+        meta.format = fmt;
+        meta.decimals = decimals;
+        meta.maxDenominator = maxDen;
+
+        // Lo que verá el estudiante como respuesta correcta
+        meta.display = exprLatex;
+        meta.latexPreview = exprLatex;
+
+        // (canonical no se usa para mcq_auto, pero lo dejamos por si acaso)
+        meta.canonical = "1 - exp(-" + lambdaTStr + ")";
+
+        return meta;
+    }
+
+    private static String formatCompactDecimal(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return String.valueOf(value);
+        }
+        java.math.BigDecimal bd = new java.math.BigDecimal(value);
+        bd = bd.stripTrailingZeros();
+        return bd.toPlainString(); // evita notación científica
+    }
+
+
 
     /**
      * Evalúa una expresión numérica escrita por el estudiante, que puede venir en LaTeX

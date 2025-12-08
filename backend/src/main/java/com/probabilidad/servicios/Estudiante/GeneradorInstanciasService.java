@@ -170,6 +170,16 @@ public class GeneradorInstanciasService {
 
             Random rndParams = new Random(rndGlobal.nextLong());
             Map<String, Object> params = sortearParametros(t.paramSchema, rndParams);
+            if ("exponencial_cdf".equalsIgnoreCase(t.family)) {
+                Number lambdaNum = (Number) params.get("lambda");
+                Number tNum      = (Number) params.get("t");
+                if (lambdaNum != null && tNum != null) {
+                    double lambdaT = lambdaNum.doubleValue() * tNum.doubleValue();
+                    params.put("lambda_t", formatCompactDecimal(lambdaT));
+                    double lambda2T = 2.0 * lambdaT;
+                    params.put("lambda2_t", formatCompactDecimal(lambda2T));
+                }
+            }
             String stemInterpolado = interpolar(t.stemMd, params);
 
             // ===== (1) MODO ESTÁTICO: opciones_base =====
@@ -532,6 +542,15 @@ public class GeneradorInstanciasService {
     // ---------------------------------------------------------------------
     // ------------------------ HELPERS DE SCHEMA --------------------------
     // ---------------------------------------------------------------------
+
+    private static String formatCompactDecimal(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return String.valueOf(value);
+        }
+        java.math.BigDecimal bd = new java.math.BigDecimal(value);
+        bd = bd.stripTrailingZeros();
+        return bd.toPlainString();
+    }
 
     private static String optString(Map<String, Object> m, String k, String def) {
         if (m == null) return def;

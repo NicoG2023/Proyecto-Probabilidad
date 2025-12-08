@@ -21,6 +21,14 @@ function isLikelyMath(s?: string) {
 export function MathInline({ text }: { text: string }) {
   if (!text) return null;
 
+  // 0) Si el texto completo viene envuelto en $...$ o $$...$$,
+  //    lo tratamos como math puro ANTES de partir por \[...\]
+  const dollarMatch = text.match(/^\s*\${1,2}([\s\S]*?)\${1,2}\s*$/);
+  if (dollarMatch) {
+    const math = dollarMatch[1];
+    return <InlineMath math={math} />;
+  }
+
   // 1) Caso mixto: texto + \[ ... \]
   const displayRegex = /\\\[(.*?)\\\]/gs;
   let match: RegExpExecArray | null;
@@ -55,23 +63,17 @@ export function MathInline({ text }: { text: string }) {
     return <>{parts}</>;
   }
 
-  // 2) Si viene envuelto en $...$ o $$...$$, asumir que es LaTeX
-  const dollarMatch = text.match(/^\s*\${1,2}([\s\S]*?)\${1,2}\s*$/);
-  if (dollarMatch) {
-    const math = dollarMatch[1];
-    return <InlineMath math={math} />;
-  }
-
-  // 3) Si NO hay \[...\] pero todo parece fórmula, úsalo como inline math
+  // 2) Si NO hay \[...\] pero todo parece fórmula, úsalo como inline math
   if (isLikelyMath(text)) {
     const m = text.match(/^\$(.*)\$/s);
     const math = m ? m[1] : text.replace(/\$/g, "");
     return <InlineMath math={math} />;
   }
 
-  // 4) Texto normal
+  // 3) Texto normal
   return <>{text}</>;
 }
+
 
 
 /**

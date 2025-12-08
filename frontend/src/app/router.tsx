@@ -36,7 +36,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "estudiante/practica/:templateId", // ⬅️ NUEVO
+        path: "estudiante/practica/:corte",
         element: (
           <RequireAuth>
             <RequireRole role="estudiante">
