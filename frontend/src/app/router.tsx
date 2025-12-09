@@ -10,6 +10,8 @@ import NotFound from "../pages/NotFound";
 import RequireAuth from "../auth/guards/RequireAuth";
 import RequireRole from "../auth/guards/RequireRole";
 import HomeLanding from "./router/HomeLanding";
+import Simulador from "../pages/Simulador";
+
 
 const router = createBrowserRouter([
   {
@@ -76,6 +78,10 @@ const router = createBrowserRouter([
         ),
       },
       { path: "404", element: <NotFound /> },
+      {
+        path: "/simulador",
+        element: <Simulador />,
+}
     ],
   },
 ]);

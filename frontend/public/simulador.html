@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador Estocástico — Combates</title>
+  <style>
+    :root {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #111;
+    }
+
+    body {
+      margin: 20px;
+      background: #f6f7fb;
+    }
+
+    .card {
+      background: white;
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(18, 24, 40, 0.06);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      background: #2b6ef6;
+      color: white;
+    }
+
+    .btn.secondary {
+      background: #6b7280;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .combat-list {
+      margin-top: 8px;
+    }
+
+    .combat-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 8px;
+      background: #fbfbff;
+      margin-bottom: 6px;
+      align-items: center;
+    }
+
+    .danger {
+      background: #ffefef;
+      color: #b91c1c;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+
+    .success {
+      background: #ecfdf5;
+      color: #166534;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+
+    .inline {
+      display: inline-block;
+    }
+
+    pre {
+      background: #0f172a;
+      color: #fff;
+      padding: 12px;
+      border-radius: 6px;
+      overflow: auto;
+    }
+
+    .fraction-preview {
+      margin-top: 6px;
+      font-size: 22px;
+      font-weight: 500;
+      text-align: center;
+      color: #4d6bff;
+      display: inline-block;
+      padding: 4px 0;
+    }
+
+    .fraction-box {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .fraction-bar {
+      width: 100%;
+      border-top: 3px solid #4d6bff;
+      margin: 2px 0;
+    }
+
+    .fraction-error {
+      color: #b91c1c;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h1>Simulador estocástico de combates</h1>
+    <div class="small">Agrega combatientes con su probabilidad de acierto (fraccionario entre 0 y 1). La simulación
+      corre Monte Carlo y muestra la probabilidad por asalto de que queden k combatientes.</div>
+  </div>
+
+  <div class="card">
+    <label>Nombre del combatiente</label>
+    <input id="nameInput" type="text" placeholder="Ej: Thor" />
+
+    <label>Probabilidad de acierto (fraccionario obligatorio, 0 ≤ p ≤ 1)</label>
+    <div class="fraction-input">
+      <input id="probInput" type="text" placeholder="Ej: 5/8" />
+      <div id="fractionPreview" class="fraction-preview"></div>
+      <div id="fractionError" class="fraction-error"></div>
+    </div>
+
+
+    <div style="margin-top:8px;" class="row">
+      <button id="addBtn" class="btn">Agregar combatiente</button>
+      <button id="clearBtn" class="btn secondary">Limpiar lista</button>
+      <div style="margin-left:auto" class="small">Combatientes actuales: <span id="countSpan">0</span></div>
+    </div>
+
+    <div class="combat-list" id="combatList"></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div style="flex:1">
+        <label>Número de simulaciones (Monte Carlo)</label>
+        <input id="trialsInput" type="number" min="1" step="1" value="5000" />
+      </div>
+      <div style="width:220px">
+        <label>Máx. asaltos a mostrar (opcional)</label>
+        <input id="maxRoundsInput" type="number" min="1" placeholder="Dejar vacío = usar máximo observado" />
+      </div>
+    </div>
+
+    <div style="margin-top:12px;" class="row">
+      <button id="runBtn" class="btn">Ejecutar simulación</button>
+      <button id="singleBtn" class="btn secondary">Correr 1 combate de ejemplo</button>
+      <div style="margin-left:auto" class="small" id="status"></div>
+    </div>
+  </div>
+
+  <div id="resultsArea"></div>
+
+  <script>
+    const preview = document.getElementById("fractionPreview");
+    function validateFraction(str) {
+      const errorBox = document.getElementById("fractionError");
+
+      // Limpiar errores si campo vacío
+      if (str.trim() === "") {
+        errorBox.textContent = "";
+        return false;
+      }
+
+      // Permitir decimales normales
+      if (!str.includes("/")) {
+        const dec = parseFloat(str);
+        if (!Number.isFinite(dec) || dec < 0 || dec > 1) {
+          errorBox.textContent = "Debe ser un número entre 0 y 1.";
+          return false;
+        }
+        errorBox.textContent = "";
+        return true;
+      }
+
+      // Validación de fracción
+      const parts = str.split("/");
+      if (parts.length !== 2 || parts[0] === "" || parts[1] === "") {
+        errorBox.textContent = "Fracción inválida.";
+        return false;
+      }
+
+      const num = Number(parts[0]);
+      const den = Number(parts[1]);
+
+      if (!Number.isFinite(num) || !Number.isFinite(den) || den <= 0) {
+        errorBox.textContent = "Numerador y denominador deben ser números válidos.";
+        return false;
+      }
+
+      if (num / den > 1) {
+        errorBox.textContent = "La fracción no puede ser mayor que 1.";
+        return false;
+      }
+
+      errorBox.textContent = "";
+      return true;
+    }
+    const probInput = document.getElementById("probInput");
+    (function () {
+      // DOM
+      const nameInput = document.getElementById('nameInput');
+      const probInput = document.getElementById('probInput');
+      const addBtn = document.getElementById('addBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const combatList = document.getElementById('combatList');
+      const countSpan = document.getElementById('countSpan');
+      const trialsInput = document.getElementById('trialsInput');
+      const runBtn = document.getElementById('runBtn');
+      const singleBtn = document.getElementById('singleBtn');
+      const resultsArea = document.getElementById('resultsArea');
+      const status = document.getElementById('status');
+      const maxRoundsInput = document.getElementById('maxRoundsInput');
+
+      let combatientes = [];
+
+      function renderList() {
+        combatList.innerHTML = '';
+        combatientes.forEach((c, i) => {
+          const div = document.createElement('div');
+          div.className = 'combat-item';
+          div.innerHTML = `
+        <div style="min-width:140px"><strong>${escapeHtml(c.name)}</strong></div>
+        <div class="small">p = ${c.p}</div>
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button data-i="${i}" class="btn secondary inline removeBtn">Eliminar</button>
+        </div>
+      `;
+          combatList.appendChild(div);
+        });
+        countSpan.textContent = combatientes.length;
+      }
+
+      function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+      addBtn.addEventListener("click", () => {
+        const name = nameInput.value.trim();
+        const raw = probInput.value.trim();
+
+        if (!name) {
+          alert("Ingresa un nombre.");
+          return;
+        }
+
+        if (!validateFraction(raw)) {
+          alert("La probabilidad es inválida.");
+          return;
+        }
+
+        const p = evalFraction(raw);
+        combatientes.push({ name, p: +p.toFixed(6) });
+
+        nameInput.value = "";
+        probInput.value = "";
+        fractionPreview.innerHTML = "";
+        fractionError.textContent = "";
+
+        renderList();
+      });
+
+
+      clearBtn.addEventListener('click', () => {
+        if (!confirm('¿Borrar toda la lista de combatientes?')) return;
+        combatientes = [];
+        renderList();
+      });
+
+      combatList.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('.removeBtn');
+        if (!btn) return;
+        const idx = +btn.dataset.i;
+        combatientes.splice(idx, 1);
+        renderList();
+      });
+
+      // --------------------
+      // Lógica del simulador
+      // --------------------
+      // Simula un solo combate y devuelve array con número de vivos después de cada asalto:
+      // ej: [2,2,1] -> después de asalto1 quedaron 2, asalto2 quedaron 2, asalto3 quedó 1 y terminó.
+      function simulateOneRun(templateCombatants) {
+        // clonar
+        const alive = templateCombatants.map(c => ({ name: c.name, p: c.p, alive: true }));
+        const rounds = [];
+
+        function aliveList() { return alive.filter(x => x.alive); }
+        function aliveCount() { return aliveList().length; }
+
+        let round = 0;
+        while (true) {
+          const before = aliveCount();
+          if (before <= 1) break; // condición de terminación antes de asalto
+          round++;
+          // ataques simultáneos
+          const toDie = new Set();
+          const living = aliveList();
+          for (const attacker of living) {
+            if (Math.random() < attacker.p) {
+              // elegir objetivo aleatorio distinto
+              const targets = living.filter(t => t !== attacker);
+              if (targets.length === 0) continue;
+              const target = targets[Math.floor(Math.random() * targets.length)];
+              toDie.add(target.name);
+            }
+          }
+          // aplicar muertes
+          for (const person of alive) {
+            if (toDie.has(person.name)) person.alive = false;
+          }
+          const after = aliveCount();
+          rounds.push(after);
+          if (after <= 1) break;
+          // seguridad: evitar loop infinito
+          if (round > 1000) { console.warn('Demasiados asaltos >1000, abortando'); break; }
+        }
+        // Si no hubo asaltos (ej: si inicial <=1) rounds[]=[] -> We'll consider no changes
+        return rounds;
+      }
+
+      // Ejecuta N simulaciones y acumula distribuciones por asalto.
+      function runMonteCarlo(templateCombatants, trials, optionalMaxRounds) {
+        const n = templateCombatants.length;
+        // winners counts
+        const winnerCounts = {};
+        for (const c of templateCombatants) winnerCounts[c.name] = 0;
+        winnerCounts['none'] = 0; // caso 0 vivos
+
+        const allRuns = []; // array de arrays de counts after each round
+        let maxRoundsObserved = 0;
+
+        for (let t = 0; t < trials; t++) {
+          const run = simulateOneRun(templateCombatants); // array of after-counts per round
+          allRuns.push(run);
+          if (run.length > maxRoundsObserved) maxRoundsObserved = run.length;
+          // final state:
+          const finalAlive = run.length === 0 ? templateCombatants.length : run[run.length - 1];
+          if (finalAlive === 1) {
+            // identificar quién quedó vivo: we must reconstruct final alive persons
+            // To avoid running full detailed trace in montecarlo, instead modify simulateOneRun to optionally return final alive name.
+            // But here we'll run a deterministic single-run simulation to get winner name — cost is small.
+            // Let's re-run a deterministic simulation but seeded? not possible. So better: change simulateOneRun to also return final alive names.
+          }
+        }
+
+        // To collect winners we need final alive names. We'll run again but optimized:
+        const winnerCounts2 = {};
+        for (const c of templateCombatants) winnerCounts2[c.name] = 0;
+        winnerCounts2['none'] = 0;
+
+        for (let t = 0; t < trials; t++) {
+          // simulate but capture final alive names
+          const finalAliveNames = simulateOneRunFinalNames(templateCombatants);
+          if (finalAliveNames.length === 1) winnerCounts2[finalAliveNames[0]]++;
+          else if (finalAliveNames.length === 0) winnerCounts2['none']++;
+        }
+
+        // Choose maxRounds to use
+        const maxR = optionalMaxRounds && optionalMaxRounds > 0 ? Math.min(optionalMaxRounds, Math.max(maxRoundsObserved, 1)) : Math.max(maxRoundsObserved, 1);
+
+        // Initialize probability table: rounds x (0..n)
+        const table = [];
+        for (let r = 0; r < maxR; r++) {
+          table[r] = new Array(n + 1).fill(0); // index k => count of trials with k alive at round r+1
+        }
+
+        // Fill table: for each trial, for each round r:
+        for (let t = 0; t < trials; t++) {
+          const run = allRuns[t];
+          const lastIdx = run.length - 1;
+          for (let r = 0; r < maxR; r++) {
+            let value;
+            if (r <= lastIdx) value = run[r];
+            else {
+              // trial finished earlier: carry forward final state (absorbing)
+              value = (run.length === 0) ? templateCombatants.length : run[lastIdx];
+            }
+            // safety: if run length 0 (no asaltos), after round1 we consider still initial number alive? The model starts counting after first asalto.
+            // We chose: run[] contains counts *after* each asalto. If run.length===0 means no asalto executed (initial ≤1).
+            // We treat carry-forward accordingly.
+            table[r][value] += 1;
+          }
+        }
+
+        // Convert counts to probabilities
+        const probTable = table.map(row => row.map(c => c / trials));
+
+        return {
+          probTable,           // probTable[roundIndex][k] = prob of k alive after that round
+          maxRounds: maxR,
+          winnerCounts: winnerCounts2,
+          trials
+        };
+      }
+
+      // Helper: simulateOneRun but return final alive names (to count winners)
+      function simulateOneRunFinalNames(templateCombatants) {
+        const alive = templateCombatants.map(c => ({ name: c.name, p: c.p, alive: true }));
+        function aliveList() { return alive.filter(x => x.alive); }
+        function aliveCount() { return aliveList().length; }
+        let round = 0;
+        while (true) {
+          const before = aliveCount();
+          if (before <= 1) break;
+          round++;
+          const toDie = new Set();
+          const living = aliveList();
+          for (const attacker of living) {
+            if (Math.random() < attacker.p) {
+              const targets = living.filter(t => t !== attacker);
+              if (targets.length === 0) continue;
+              const target = targets[Math.floor(Math.random() * targets.length)];
+              toDie.add(target.name);
+            }
+          }
+          for (const person of alive) {
+            if (toDie.has(person.name)) person.alive = false;
+          }
+          const after = aliveCount();
+          if (after <= 1) break;
+          if (round > 1000) break;
+        }
+        return alive.filter(x => x.alive).map(x => x.name);
+      }
+
+      // ----------------------
+      // UI: ejecución y render
+      // ----------------------
+      runBtn.addEventListener('click', async () => {
+        if (combatientes.length < 2) { alert('Agrega al menos 2 combatientes.'); return; }
+        const trials = Math.max(1, Math.floor(Number(trialsInput.value) || 0));
+        if (!trials) { alert('Ingresa un número válido de simulaciones.'); return; }
+        const optionalMax = parseInt(maxRoundsInput.value) || null;
+
+        // status
+        status.textContent = 'Simulando...';
+        runBtn.disabled = true;
+        singleBtn.disabled = true;
+
+        // run Monte Carlo (asynchronously let UI update)
+        await new Promise(resolve => setTimeout(resolve, 20));
+
+        // Run trials: note that we run simulateOneRun twice internally (first to gather rounds, second to gather winners).
+        // This is acceptable for moderate trial counts; if you want to optimize, combine both responsibilities into a single pass.
+        const result = runMonteCarlo(combatientes, trials, optionalMax);
+
+        renderResults(result);
+        runBtn.disabled = false;
+        singleBtn.disabled = false;
+        status.textContent = `Hecho — ${trials} simulaciones.`;
+      });
+
+      singleBtn.addEventListener('click', () => {
+        if (combatientes.length < 2) { alert('Agrega al menos 2 combatientes.'); return; }
+        const run = simulateOneRunDetailed(combatientes);
+        renderSingleRun(run);
+      });
+
+      // simulateOneRunDetailed: devuelve log con estado por asalto y estado final con nombres
+      function simulateOneRunDetailed(templateCombatants) {
+        const alive = templateCombatants.map(c => ({ name: c.name, p: c.p, alive: true }));
+        const log = [];
+        function aliveList() { return alive.filter(x => x.alive); }
+        function aliveCount() { return aliveList().length; }
+
+        let round = 0;
+        while (true) {
+          const before = aliveCount();
+          if (before <= 1) break;
+          round++;
+          const toDie = new Set();
+          const living = aliveList();
+          for (const attacker of living) {
+            if (Math.random() < attacker.p) {
+              const targets = living.filter(t => t !== attacker);
+              if (targets.length === 0) continue;
+              const target = targets[Math.floor(Math.random() * targets.length)];
+              toDie.add(target.name);
+            }
+          }
+          for (const person of alive) {
+            if (toDie.has(person.name)) person.alive = false;
+          }
+          const after = aliveCount();
+          log.push({
+            round,
+            before,
+            after,
+            deaths: Array.from(toDie)
+          });
+          if (after <= 1) break;
+          if (round > 1000) break;
+        }
+
+        return {
+          log,
+          finalAliveNames: alive.filter(x => x.alive).map(x => x.name)
+        };
+      }
+
+      // Render montecarlo results
+      function renderResults(res) {
+        const n = combatientes.length;
+        resultsArea.innerHTML = '';
+        const card = document.createElement('div'); card.className = 'card';
+        resultsArea.appendChild(card);
+
+        const title = document.createElement('h1');
+        title.textContent = 'Resultados (Monte Carlo)';
+        card.appendChild(title);
+
+        const info = document.createElement('div');
+        info.className = 'small';
+        info.innerHTML = `Simulaciones: <strong>${res.trials}</strong>. Máx asaltos mostrados: <strong>${res.maxRounds}</strong>.`;
+        card.appendChild(info);
+
+        // tabla de probabilidades por asalto
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        headerRow.appendChild(document.createElement('th')).textContent = 'Asalto';
+        for (let k = 0; k <= n; k++) {
+          const th = document.createElement('th');
+          th.textContent = `${k} vivos`;
+          headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        for (let r = 0; r < res.maxRounds; r++) {
+          const tr = document.createElement('tr');
+          const th = document.createElement('th');
+          th.textContent = `Asalto ${r + 1}`;
+          tr.appendChild(th);
+          for (let k = 0; k <= n; k++) {
+            const td = document.createElement('td');
+            const prob = res.probTable[r][k] || 0;
+            td.textContent = (prob * 100).toFixed(2) + '%';
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        card.appendChild(table);
+
+        // Ganadores
+        const winnersDiv = document.createElement('div');
+        winnersDiv.style.marginTop = '12px';
+        winnersDiv.innerHTML = '<strong>Distribución de resultados finales:</strong>';
+        const wl = document.createElement('div');
+        wl.className = 'small';
+        const lines = [];
+        for (const name of Object.keys(res.winnerCounts)) {
+          const cnt = res.winnerCounts[name];
+          lines.push(`${name}: ${cnt} (${((cnt / res.trials) * 100).toFixed(2)}%)`);
+        }
+        wl.textContent = lines.join('  •  ');
+        winnersDiv.appendChild(wl);
+        card.appendChild(winnersDiv);
+
+        // botón para descargar tabla CSV
+        const csvBtn = document.createElement('button');
+        csvBtn.className = 'btn';
+        csvBtn.textContent = 'Exportar tabla CSV';
+        csvBtn.style.marginTop = '12px';
+        csvBtn.addEventListener('click', () => {
+          const csv = buildCSV(res);
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'probabilidades_por_asalto.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+        card.appendChild(csvBtn);
+      }
+
+      // Render single detailed run
+      function renderSingleRun(run) {
+        resultsArea.innerHTML = '';
+        const card = document.createElement('div'); card.className = 'card';
+        resultsArea.appendChild(card);
+
+        const title = document.createElement('h1');
+        title.textContent = 'Ejemplo de un combate (una ejecución)';
+        card.appendChild(title);
+
+        const small = document.createElement('div'); small.className = 'small';
+        small.textContent = `Asaltos simulados: ${run.log.length}.`;
+        card.appendChild(small);
+
+        if (run.log.length === 0) {
+          const p = document.createElement('div');
+          p.className = 'small';
+          p.textContent = 'No hubo asaltos (posiblemente ya había ≤1 combatientes al inicio).';
+          card.appendChild(p);
+        } else {
+          const table = document.createElement('table');
+          const thead = document.createElement('thead');
+          thead.innerHTML = '<tr><th>Asalto</th><th>Antes</th><th>Después</th><th>Muertes</th></tr>';
+          table.appendChild(thead);
+          const tbody = document.createElement('tbody');
+          for (const r of run.log) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${r.round}</td><td>${r.before}</td><td>${r.after}</td><td>${r.deaths.join(', ') || '-'}</td>`;
+            tbody.appendChild(tr);
+          }
+          table.appendChild(tbody);
+          card.appendChild(table);
+        }
+
+        const final = document.createElement('div');
+        final.style.marginTop = '12px';
+        if (run.finalAliveNames.length === 1) {
+          final.innerHTML = `<div class="success">Ganador: <strong>${escapeHtml(run.finalAliveNames[0])}</strong></div>`;
+        } else if (run.finalAliveNames.length === 0) {
+          final.innerHTML = `<div class="danger">Todos murieron en el mismo asalto.</div>`;
+        } else {
+          final.innerHTML = `<div class="small">Estado final: ${run.finalAliveNames.length} vivos (${run.finalAliveNames.join(', ')})</div>`;
+        }
+        card.appendChild(final);
+      }
+
+      // Build CSV for export
+      function buildCSV(res) {
+        const n = combatientes.length;
+        const rows = [];
+        // header
+        const header = ['Asalto'];
+        for (let k = 0; k <= n; k++) header.push(`${k}_vivos`);
+        rows.push(header.join(','));
+        for (let r = 0; r < res.maxRounds; r++) {
+          const row = [`${r + 1}`];
+          for (let k = 0; k <= n; k++) {
+            row.push((res.probTable[r][k] || 0).toFixed(6));
+          }
+          rows.push(row.join(','));
+        }
+        return rows.join('\n');
+      }
+
+      // Initial sample data
+      combatientes = [
+        { name: 'A', p: 0.5 },
+        { name: 'B', p: 0.4 },
+        { name: 'C', p: 0.6 }
+      ];
+      renderList();
+    })();
+
+    // Convierte fracción o decimal a número
+    function evalFraction(str) {
+      str = str.trim();
+      if (str.includes("/")) {
+        const [a, b] = str.split("/");
+        const num = parseFloat(a);
+        const den = parseFloat(b);
+        if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return NaN;
+        return num / den;
+      }
+      const dec = parseFloat(str);
+      return Number.isFinite(dec) ? dec : NaN;
+    }
+
+    // Renderiza fracción bonita
+    function renderFraction(str) {
+      const preview = document.getElementById("fractionPreview");
+
+      if (!validateFraction(str)) {
+        preview.innerHTML = "";
+        return;
+      }
+
+      if (!str.includes("/")) {
+        preview.innerHTML = ""; // sin fracción, no se muestra
+        return;
+      }
+
+      const [num, den] = str.split("/");
+
+      preview.innerHTML = `
+    <div class="fraction-box">
+      <div>${num}</div>
+      <div class="fraction-bar"></div>
+      <div>${den}</div>
+    </div>
+  `;
+    }
+
+
+    // Actualiza preview en vivo
+    probInput.addEventListener("input", () => {
+      const raw = probInput.value;
+      renderFraction(raw);
+    });
+  </script>
+
+</body>
+
+</html>
