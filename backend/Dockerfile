@@ -6,8 +6,6 @@ WORKDIR /workspace
 COPY gradlew ./
 COPY gradle ./gradle
 COPY build.gradle settings.gradle gradle.properties ./
-# Si usas version catalog:
-# COPY gradle/libs.versions.toml gradle/libs.versions.toml
 
 RUN chmod +x gradlew
 
@@ -25,13 +23,10 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
     ./gradlew --no-daemon quarkusBuild -Dquarkus.package.type=fast-jar -x test
 
 # ===== Runner =====
-# (elige una base minimal; temurin jre es OK, distroless es más seguro)
 FROM eclipse-temurin:21-jre AS runner
-# Alternativas:
-# FROM gcr.io/distroless/java21-debian12:nonroot
-# FROM registry.access.redhat.com/ubi9/openjdk-21-runtime
 
 WORKDIR /app
+
 # Copiamos el directorio quarkus-app completo
 COPY --from=build /workspace/build/quarkus-app/ /app/
 
@@ -39,11 +34,12 @@ COPY --from=build /workspace/build/quarkus-app/ /app/
 RUN useradd -u 1001 quarkus && chown -R quarkus:quarkus /app
 USER 1001
 
-# Red: escuchar en todas las interfaces (también lo puedes setear en JAVA_OPTS)
+# Red: escuchar en todas las interfaces
 ENV QUARKUS_HTTP_HOST=0.0.0.0
-# JVM amigable con contenedores (ajusta a tu memoria)
+# JVM amigable con contenedores
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
 
 EXPOSE 8080
+
 # Para fast-jar se ejecuta quarkus-run.jar dentro de /app
 CMD ["sh","-lc","exec java $JAVA_OPTS -jar quarkus-run.jar"]

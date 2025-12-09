@@ -1,5 +1,4 @@
 services:
-
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: keycloak-probabilidad
@@ -25,33 +24,6 @@ services:
     networks:
       - app-network
 
-  quarkus-probabilidad:
-    build: ../backend
-    container_name: quarkus-probabilidad
-    restart: unless-stopped
-    environment:
-      QUARKUS_OIDC_AUTH_SERVER_URL: ${QUARKUS_OIDC_AUTH_SERVER_URL}
-      QUARKUS_OIDC_CLIENT_ID: ${QUARKUS_OIDC_CLIENT_ID}
-      QUARKUS_OIDC_APP_TYPE: ${QUARKUS_OIDC_APP_TYPE}
-      QUARKUS_OIDC_AUDIENCE: ${QUARKUS_OIDC_AUDIENCE}
-      QUARKUS_OIDC_ROLES_SOURCE: ${QUARKUS_OIDC_ROLES_SOURCE}
-      QUARKUS_OIDC_ROLE_PATH: ${QUARKUS_OIDC_ROLE_PATH}
-      ADMIN_URL: ${ADMIN_URL}
-      REALM: ${REALM}
-      CLIENT_ID: ${CLIENT_ID}
-      CLIENT_SECRET: ${CLIENT_SECRET}
-      QUARKUS_PUBLIC_PATHS: ${QUARKUS_PUBLIC_PATHS}
-      QUARKUS_HTTP_CORS: ${QUARKUS_HTTP_CORS}
-      QUARKUS_HTTP_CORS_ORIGINS: ${QUARKUS_HTTP_CORS_ORIGINS}
-      QUARKUS_HTTP_CORS_METHODS: ${QUARKUS_HTTP_CORS_METHODS}
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    ports:
-      - "8081:8080"
-    networks:
-      - app-network
-
   quizdb:
     image: postgres:latest
     container_name: postgres-quiz
@@ -69,6 +41,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+    networks:
+      - app-network
+
+  quarkus-probabilidad:
+    build: ../backend
+    container_name: quarkus-probabilidad
+    restart: unless-stopped
+    environment:
+      # OIDC / Keycloak (se sobreponen a application.properties)
+      QUARKUS_OIDC_AUTH_SERVER_URL: ${QUARKUS_OIDC_AUTH_SERVER_URL}
+      QUARKUS_OIDC_CLIENT_ID: ${QUARKUS_OIDC_CLIENT_ID}
+      QUARKUS_OIDC_APP_TYPE: ${QUARKUS_OIDC_APP_TYPE}
+      QUARKUS_OIDC_AUDIENCE: ${QUARKUS_OIDC_AUDIENCE}
+      QUARKUS_OIDC_ROLES_SOURCE: ${QUARKUS_OIDC_ROLES_SOURCE}
+      QUARKUS_OIDC_ROLE_PATH: ${QUARKUS_OIDC_ROLE_PATH}
+      ADMIN_URL: ${ADMIN_URL}
+      REALM: ${REALM}
+      CLIENT_ID: ${CLIENT_ID}
+      CLIENT_SECRET: ${CLIENT_SECRET}
+
+      # CORS
+      QUARKUS_HTTP_CORS: ${QUARKUS_HTTP_CORS}
+      QUARKUS_HTTP_CORS_ORIGINS: ${QUARKUS_HTTP_CORS_ORIGINS}
+      QUARKUS_HTTP_CORS_METHODS: ${QUARKUS_HTTP_CORS_METHODS}
+
+      # DB dentro de docker: usar el nombre del servicio, no localhost
+      DB_URL: jdbc:postgresql://quizdb:5432/quizdb
+      DB_USER: quiz
+      DB_PASS: quiz
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      quizdb:
+        condition: service_healthy
+    ports:
+      - "8081:8080"  # fuera del contenedor será http://localhost:8081
     networks:
       - app-network
 
