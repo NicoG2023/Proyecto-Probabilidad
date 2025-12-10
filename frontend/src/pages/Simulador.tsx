@@ -408,10 +408,9 @@ export default function Simulador() {
               Simulador estocástico de combates
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              Agrega combatientes con su probabilidad de acierto (fraccionario entre 0 y 1). La
-              simulación corre Monte Carlo y muestra la probabilidad por asalto de que queden{" "}
-              <span className="font-semibold">k</span> combatientes.
-            </p>
+             Esta simulación representa un proceso estocástico donde <span className="font-semibold">n</span> combatientes, cada uno con una probabilidad de acierto definida desde el inicio, se enfrentan atacando simultaneamente siempre al combatiente más fuerte, sin asumir que cada rival elihge un objetivo diferente. 
+             Después de cada suceso, la simulación estima y muestra la probabilidad de que <span className="font-semibold">k</span> combatientes permanezcan en pie.
+            <br></br>Puedes agregar combatientes indicando su probabilidad de acierto (un valor entre 0 y 1). La simulación ejecuta un método de Monte Carlo y presenta, suceso por suceso, la probabilidad de que queden <span className="font-semibold">k</span> combatientes.</p>
           </section>
 
           {/* Configuración de combatientes */}

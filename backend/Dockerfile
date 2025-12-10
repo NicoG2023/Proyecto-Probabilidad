@@ -7,7 +7,7 @@ COPY gradlew ./
 COPY gradle ./gradle
 COPY build.gradle settings.gradle gradle.properties ./
 
-# 🔧 ARREGLO: quitar CRLF de Windows y dar permisos de ejecución
+# 🔧 Arreglo CRLF y permisos
 RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 
 # Pre-calentamos dependencias (cache Gradle)
@@ -22,3 +22,25 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.gradle/caches \
     --mount=type=cache,target=/root/.gradle/wrapper \
     ./gradlew --no-daemon quarkusBuild -Dquarkus.package.type=fast-jar -x test
+
+# ===== Runner =====
+FROM eclipse-temurin:21-jre AS runner
+
+WORKDIR /app
+
+# Copiamos el directorio quarkus-app completo
+COPY --from=build /workspace/build/quarkus-app/ /app/
+
+# Seguridad: usuario no root
+RUN useradd -u 1001 quarkus && chown -R quarkus:quarkus /app
+USER 1001
+
+# Red: escuchar en todas las interfaces
+ENV QUARKUS_HTTP_HOST=0.0.0.0
+# JVM amigable con contenedores
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
+
+EXPOSE 8080
+
+# 👇 Aquí forzamos que NO se use jshell, sino java -jar
+ENTRYPOINT ["sh","-lc","exec java $JAVA_OPTS -jar quarkus-run.jar"]
