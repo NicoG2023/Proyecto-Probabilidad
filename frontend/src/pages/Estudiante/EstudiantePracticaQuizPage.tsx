@@ -411,8 +411,6 @@ export default function EstudiantePracticaQuizPage() {
     const isPairNumeric = answerMeta?.mode === "mcq_auto_pair";
     const isExpressionPair =
       isPairNumeric && current.answerMode === "expression_pair";
-    const isDecimalPair =
-      isPairNumeric && current.answerMode !== "expression_pair";
 
     // Validar que haya respuesta
     if (!rawAnswer) {
@@ -575,8 +573,6 @@ export default function EstudiantePracticaQuizPage() {
 
               const isExpressionPair =
                 isPairNumeric && q.answerMode === "expression_pair";
-              const isDecimalPair =
-                isPairNumeric && q.answerMode !== "expression_pair";
 
               const placeholderMapForCorte =
                 PLACEHOLDERS_BY_CORTE[corteCode] ?? {};

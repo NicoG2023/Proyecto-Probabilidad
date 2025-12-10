@@ -1,5 +1,4 @@
 // src/router/HomeLanding.tsx
-import React from "react";
 import { Navigate } from "react-router-dom";
 import {keycloak} from "../../auth/keycloak";
 import EstudianteDashboard from "../../pages/Estudiante/EstudianteDashboard";

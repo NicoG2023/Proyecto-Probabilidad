@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
@@ -14,6 +16,7 @@ services:
     volumes:
       - ./keycloak/realms:/opt/keycloak/data/import
       - ../frontend/themes:/opt/keycloak/themes
+      - kc-data:/opt/keycloak/data
     ports:
       - "8080:8080"
     healthcheck:
@@ -34,7 +37,7 @@ services:
       POSTGRES_PASSWORD: quiz
       POSTGRES_DB: quizdb
     ports:
-      - "5432:5432"
+      - "5432:5432" # si no quieres exponer la BD, puedes borrar esta línea
     volumes:
       - quizdb-data:/var/lib/postgresql/data
     healthcheck:
@@ -78,6 +81,19 @@ services:
         condition: service_healthy
     ports:
       - "8081:8080"  # fuera del contenedor será http://localhost:8081
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: frontend-probabilidad
+    depends_on:
+      quarkus-probabilidad:
+        condition: service_started
+    ports:
+      - "5173:80"   # localhost:5173 -> nginx (puerto 80 dentro del contenedor)
     networks:
       - app-network
 
